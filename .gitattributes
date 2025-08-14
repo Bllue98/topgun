@@ -20,14 +20,14 @@
 *.bat             text eol=crlf
 *.cmd             text eol=crlf
 *.coffee          text
-*.css             text diff=css
+*.css             text eol=lf diff=css
 *.htm             text diff=html
 *.html            text diff=html
 *.inc             text
 *.ini             text
-*.js              text
-*.json            text
-*.jsx             text
+*.js              text eol=lf
+*.json            text eol=lf
+*.jsx             text eol=lf
 *.less            text
 *.ls              text
 *.map             text -diff
@@ -40,15 +40,15 @@
 *.rb              text diff=ruby
 *.sass            text
 *.scm             text
-*.scss            text diff=css
+*.scss            text eol=lf diff=css
 *.sh              text eol=lf
 .husky/*          text eol=lf
 *.sql             text
 *.styl            text
 *.tag             text
-*.ts              text
-*.tsx             text
-*.xml             text
+*.ts              text eol=lf
+*.tsx             text eol=lf
+*.xml             text eol=lf
 *.xhtml           text diff=html
 
 # Docker
