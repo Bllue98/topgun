@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "rootDir": "src",
+    "rootDir": ".",
     "target": "es6",
     "lib": [
       "dom",
@@ -21,16 +21,25 @@
     "jsx": "preserve",
     "incremental": true,
     "paths": {
+      "src/*": [
+        "./src/*"
+      ],
+      "@/*": [
+        "./src/*"
+      ],
       "apexcharts": [
         "./node_modules/apexcharts-clevision"
       ],
       "apexcharts/*": [
         "./node_modules/apexcharts-clevision/*"
-      ],
+      ]
     }
   },
   "include": [
+    "next-env.d.ts",
+    "next.d.ts",
     "src",
+    "pages",
     "declaration.d.ts"
   ],
   "exclude": [
