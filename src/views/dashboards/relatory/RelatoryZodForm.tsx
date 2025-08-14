@@ -18,7 +18,7 @@ import {
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { styled } from '@mui/material/styles'
-import { FormProvider, useForm } from 'react-hook-form'
+import { Controller, FormProvider, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { relatorySchema, RelatoryData } from './Schemas'
 
@@ -41,12 +41,7 @@ const RelatoryDialog: React.FC = () => {
 
   const methods = useForm<RelatoryData>({
     resolver: zodResolver(relatorySchema),
-    defaultValues: {
-      title: '',
-      date: '',
-      shortDescription: '',
-      longDescription: ''
-    }
+    defaultValues: {}
   })
 
   const {
@@ -92,117 +87,127 @@ const RelatoryDialog: React.FC = () => {
   }, [imageUrl])
 
   return (
-    <FormProvider {...methods}>
+    <>
       <Button variant='contained' onClick={handleOpen}>
         Add Relatory
       </Button>
 
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth='sm'>
-        <DialogTitle>New Relatory</DialogTitle>
-        <DialogContent dividers>
-          <TextField
-            {...register('title')}
-            required
-            error={!!errors.title}
-            helperText={errors.title?.message}
-            label='Title'
-            fullWidth
-            margin='normal'
-          />
-          <TextField
-            {...register('date')}
-            label='Date'
-            error={!!errors.date}
-            helperText={errors.date?.message}
-            fullWidth
-            margin='normal'
-            type='date'
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            {...register('shortDescription')}
-            label='Short Description'
-            fullWidth
-            margin='normal'
-            error={!!errors.shortDescription}
-            helperText={errors.shortDescription?.message}
-          />
+      <FormProvider {...methods}>
+        <Dialog open={open} onClose={handleClose} fullWidth maxWidth='sm'>
+          <DialogTitle>New Relatory</DialogTitle>
+          <DialogContent dividers>
+            <Controller
+              name='title'
+              control={methods.control}
+              rules={{ required: 'Title is required' }}
+              render={({ field: { onChange, value = '', ...fieldProps } }) => (
+                <TextField
+                  {...fieldProps}
+                  label='Title'
+                  fullWidth
+                  margin='normal'
+                  onChange={onChange}
+                  value={value}
+                  error={!!errors.title}
+                  helperText={errors.title?.message}
+                />
+              )}
+            />
+            <TextField
+              {...register('date')}
+              label='Date'
+              error={!!errors.date}
+              helperText={errors.date?.message}
+              fullWidth
+              margin='normal'
+              type='date'
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              {...register('shortDescription')}
+              label='Short Description'
+              fullWidth
+              margin='normal'
+              error={!!errors.shortDescription}
+              helperText={errors.shortDescription?.message}
+            />
 
-          <input
-            accept='image/*'
-            id='upload-image'
-            type='file'
-            style={{ display: 'none' }}
-            onChange={e => {
-              const file = e.target.files?.[0]
-              if (file) {
-                const imageUrl = URL.createObjectURL(file)
-                setValue('image', imageUrl, { shouldDirty: true, shouldValidate: true })
-                setSelectedFileName(file.name)
-              }
-            }}
-          />
-
-          <label htmlFor='upload-image'>
-            <Button variant='outlined' component='span' startIcon={<UploadFileIcon />} sx={{ mt: 2 }} fullWidth>
-              Selecionar Imagem
-            </Button>
-          </label>
-
-          {selectedFileName && (
-            <Typography variant='body2' sx={{ mt: 1, color: 'text.secondary' }}>
-              Imagem selecionada: {selectedFileName}
-            </Typography>
-          )}
-
-          {errors.image?.message && (
-            <Typography variant='caption' color='error' sx={{ mt: 1, display: 'block' }}>
-              {errors.image.message}
-            </Typography>
-          )}
-
-          {imageUrl && (
-            <CardMedia
-              component='img'
-              src={imageUrl}
-              alt='Pré-visualização'
-              sx={{
-                width: 'auto',
-                maxWidth: '100%',
-                height: 'auto',
-                maxHeight: 200,
-                objectFit: 'contain',
-                mt: 1
+            <input
+              accept='image/*'
+              id='upload-image'
+              type='file'
+              style={{ display: 'none' }}
+              onChange={e => {
+                const file = e.target.files?.[0]
+                if (file) {
+                  const imageUrl = URL.createObjectURL(file)
+                  setValue('image', imageUrl, { shouldDirty: true, shouldValidate: true })
+                  setSelectedFileName(file.name)
+                }
               }}
             />
-          )}
 
-          {!showLongDescription && (
-            <Button variant='text' onClick={() => setShowLongDescription(true)} sx={{ mt: 2 }}>
-              Adicionar descrição detalhada
+            <label htmlFor='upload-image'>
+              <Button variant='outlined' component='span' startIcon={<UploadFileIcon />} sx={{ mt: 2 }} fullWidth>
+                Selecionar Imagem
+              </Button>
+            </label>
+
+            {selectedFileName && (
+              <Typography variant='body2' sx={{ mt: 1, color: 'text.secondary' }}>
+                Imagem selecionada: {selectedFileName}
+              </Typography>
+            )}
+
+            {errors.image?.message && (
+              <Typography variant='caption' color='error' sx={{ mt: 1, display: 'block' }}>
+                {errors.image.message}
+              </Typography>
+            )}
+
+            {imageUrl && (
+              <CardMedia
+                component='img'
+                src={imageUrl}
+                alt='Pré-visualização'
+                sx={{
+                  width: 'auto',
+                  maxWidth: '100%',
+                  height: 'auto',
+                  maxHeight: 200,
+                  objectFit: 'contain',
+                  mt: 1
+                }}
+              />
+            )}
+
+            {!showLongDescription && (
+              <Button variant='text' onClick={() => setShowLongDescription(true)} sx={{ mt: 2 }}>
+                Adicionar descrição detalhada
+              </Button>
+            )}
+            {showLongDescription && (
+              <TextField
+                {...register('longDescription')}
+                label='Long Description'
+                error={!!errors.longDescription}
+                helperText={errors.longDescription?.message}
+                fullWidth
+                multiline
+                rows={4}
+                margin='normal'
+              />
+            )}
+          </DialogContent>
+
+          <DialogActions>
+            <Button variant='contained' onClick={handleSubmit(onSubmit, errors => console.log(errors))}>
+              Add
             </Button>
-          )}
-          {showLongDescription && (
-            <TextField
-              {...register('longDescription')}
-              label='Long Description'
-              error={!!errors.longDescription}
-              helperText={errors.longDescription?.message}
-              fullWidth
-              multiline
-              rows={4}
-              margin='normal'
-            />
-          )}
-        </DialogContent>
-
-        <DialogActions>
-          <Button variant='contained' onClick={handleSubmit(onSubmit, errors => console.log(errors))}>
-            Add
-          </Button>
-          <Button onClick={handleClose}>Cancel</Button>
-        </DialogActions>
-      </Dialog>
+            <Button onClick={handleClose}>Cancel</Button>
+          </DialogActions>
+        </Dialog>
+      </FormProvider>
 
       <Grid container spacing={2} sx={{ mt: 2 }}>
         <Grid item xs={12}>
@@ -259,7 +264,7 @@ const RelatoryDialog: React.FC = () => {
           </Grid>
         ))}
       </Grid>
-    </FormProvider>
+    </>
   )
 }
 
