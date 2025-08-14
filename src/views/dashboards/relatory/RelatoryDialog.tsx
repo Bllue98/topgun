@@ -71,7 +71,7 @@ const RelatoryDialog: React.FC = () => {
 
   const onSubmit = (data: CardData) => {
     setCards(prev => [...prev, data])
-    setExpanded(prev => ({ ...prev, [cards.length]: false }))
+    setExpanded(prev => ({ ...prev, [cards?.length]: false }))
     handleClose()
   }
 
