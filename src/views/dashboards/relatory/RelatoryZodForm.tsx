@@ -41,7 +41,12 @@ const RelatoryDialog: React.FC = () => {
 
   const methods = useForm<RelatoryData>({
     resolver: zodResolver(relatorySchema),
-    defaultValues: {}
+    defaultValues: {
+      title: '',
+      date: '',
+      shortDescription: '',
+      longDescription: ''
+    }
   })
 
   const {
