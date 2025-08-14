@@ -1,7 +1,10 @@
 import { z } from 'zod'
 
 export const relatorySchema = z.object({
-  title: z.coerce.string().trim().min(1, 'Title is required'),
+  title: z.string({
+    required_error: 'Please enter a title',
+    invalid_type_error: 'Please enter a valid title'
+  }),
   date: z.string().refine(
     val => {
       if (!val) return true
