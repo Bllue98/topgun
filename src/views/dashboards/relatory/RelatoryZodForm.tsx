@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import {
   Button,
@@ -18,17 +18,13 @@ import {
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { styled } from '@mui/material/styles'
-import { useForm } from 'react-hook-form'
+import { FormProvider, useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { relatorySchema, RelatoryData } from './Schemas'
 
-interface CardData {
-  title: string
-  date: string
-  shortDescription: string
-  longDescription: string
-  image?: string
-}
-
-const ExpandMore = styled(IconButton)<{ expand: boolean }>(({ theme, expand }) => ({
+const ExpandMore = styled(IconButton, {
+  shouldForwardProp: prop => prop !== 'expand'
+})<{ expand: boolean }>(({ theme, expand }) => ({
   transform: expand ? 'rotate(180deg)' : 'rotate(0deg)',
   marginLeft: 'auto',
   transition: theme.transitions.create('transform', {
@@ -38,10 +34,20 @@ const ExpandMore = styled(IconButton)<{ expand: boolean }>(({ theme, expand }) =
 
 const RelatoryDialog: React.FC = () => {
   const [open, setOpen] = useState(false)
-  const [cards, setCards] = useState<CardData[]>([])
+  const [cards, setCards] = useState<RelatoryData[]>([])
   const [expanded, setExpanded] = useState<{ [key: number]: boolean }>({})
   const [showLongDescription, setShowLongDescription] = useState(false)
   const [selectedFileName, setSelectedFileName] = useState('')
+
+  const methods = useForm<RelatoryData>({
+    resolver: zodResolver(relatorySchema),
+    defaultValues: {
+      title: '',
+      date: '',
+      shortDescription: '',
+      longDescription: ''
+    }
+  })
 
   const {
     register,
@@ -50,15 +56,7 @@ const RelatoryDialog: React.FC = () => {
     setValue,
     reset,
     formState: { errors }
-  } = useForm<CardData>({
-    defaultValues: {
-      title: '',
-      date: '',
-      shortDescription: '',
-      longDescription: '',
-      image: ''
-    }
-  })
+  } = methods
 
   const handleOpen = () => setOpen(true)
 
@@ -69,9 +67,13 @@ const RelatoryDialog: React.FC = () => {
     setShowLongDescription(false)
   }
 
-  const onSubmit = (data: CardData) => {
-    setCards(prev => [...prev, data])
-    setExpanded(prev => ({ ...prev, [cards.length]: false }))
+  const onSubmit = (data: RelatoryData) => {
+    setCards(prev => {
+      const next = [...prev, data]
+      setExpanded(exp => ({ ...exp, [next?.length - 1]: false }))
+
+      return next
+    })
     handleClose()
   }
 
@@ -79,8 +81,18 @@ const RelatoryDialog: React.FC = () => {
     setExpanded(prev => ({ ...prev, [index]: !prev[index] }))
   }
 
+  const imageUrl = watch('image')
+
+  useEffect(() => {
+    return () => {
+      if (imageUrl && imageUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(imageUrl)
+      }
+    }
+  }, [imageUrl])
+
   return (
-    <>
+    <FormProvider {...methods}>
       <Button variant='contained' onClick={handleOpen}>
         Add Relatory
       </Button>
@@ -88,16 +100,33 @@ const RelatoryDialog: React.FC = () => {
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth='sm'>
         <DialogTitle>New Relatory</DialogTitle>
         <DialogContent dividers>
-          <TextField {...register('title')} required error={!!errors.title} label='Title' fullWidth margin='normal' />
+          <TextField
+            {...register('title')}
+            required
+            error={!!errors.title}
+            helperText={errors.title?.message}
+            label='Title'
+            fullWidth
+            margin='normal'
+          />
           <TextField
             {...register('date')}
             label='Date'
+            error={!!errors.date}
+            helperText={errors.date?.message}
             fullWidth
             margin='normal'
             type='date'
             InputLabelProps={{ shrink: true }}
           />
-          <TextField {...register('shortDescription')} label='Short Description' fullWidth margin='normal' />
+          <TextField
+            {...register('shortDescription')}
+            label='Short Description'
+            fullWidth
+            margin='normal'
+            error={!!errors.shortDescription}
+            helperText={errors.shortDescription?.message}
+          />
 
           <input
             accept='image/*'
@@ -108,7 +137,7 @@ const RelatoryDialog: React.FC = () => {
               const file = e.target.files?.[0]
               if (file) {
                 const imageUrl = URL.createObjectURL(file)
-                setValue('image', imageUrl) // 🔹 Atualiza o campo 'image' no formulário
+                setValue('image', imageUrl, { shouldDirty: true, shouldValidate: true })
                 setSelectedFileName(file.name)
               }
             }}
@@ -126,10 +155,16 @@ const RelatoryDialog: React.FC = () => {
             </Typography>
           )}
 
-          {watch('image') && (
+          {errors.image?.message && (
+            <Typography variant='caption' color='error' sx={{ mt: 1, display: 'block' }}>
+              {errors.image.message}
+            </Typography>
+          )}
+
+          {imageUrl && (
             <CardMedia
               component='img'
-              src={watch('image')}
+              src={imageUrl}
               alt='Pré-visualização'
               sx={{
                 width: 'auto',
@@ -151,6 +186,8 @@ const RelatoryDialog: React.FC = () => {
             <TextField
               {...register('longDescription')}
               label='Long Description'
+              error={!!errors.longDescription}
+              helperText={errors.longDescription?.message}
               fullWidth
               multiline
               rows={4}
@@ -160,7 +197,7 @@ const RelatoryDialog: React.FC = () => {
         </DialogContent>
 
         <DialogActions>
-          <Button variant='contained' onClick={handleSubmit(onSubmit)}>
+          <Button variant='contained' onClick={handleSubmit(onSubmit, errors => console.log(errors))}>
             Add
           </Button>
           <Button onClick={handleClose}>Cancel</Button>
@@ -222,7 +259,7 @@ const RelatoryDialog: React.FC = () => {
           </Grid>
         ))}
       </Grid>
-    </>
+    </FormProvider>
   )
 }
 
