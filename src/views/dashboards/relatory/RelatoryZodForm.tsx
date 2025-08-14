@@ -50,7 +50,6 @@ const RelatoryDialog: React.FC = () => {
   })
 
   const {
-    register,
     handleSubmit,
     watch,
     setValue,
@@ -105,38 +104,49 @@ const RelatoryDialog: React.FC = () => {
               name='title'
               control={methods.control}
               rules={{ required: 'Title is required' }}
-              render={({ field: { onChange, value = '', ...fieldProps } }) => (
+              render={({ field }) => (
                 <TextField
-                  {...fieldProps}
+                  {...field}
                   label='Title'
                   fullWidth
                   margin='normal'
-                  onChange={onChange}
-                  value={value}
                   error={!!errors.title}
                   helperText={errors.title?.message}
                 />
               )}
             />
-            <TextField
-              {...register('date')}
-              label='Date'
-              error={!!errors.date}
-              helperText={errors.date?.message}
-              fullWidth
-              margin='normal'
-              type='date'
-              InputLabelProps={{ shrink: true }}
+            <Controller
+              name='date'
+              control={methods.control}
+              rules={{ required: 'Date is required' }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label='Date'
+                  type='date'
+                  fullWidth
+                  margin='normal'
+                  InputLabelProps={{ shrink: true }}
+                  error={!!errors.date}
+                  helperText={errors.date?.message}
+                />
+              )}
             />
-            <TextField
-              {...register('shortDescription')}
-              label='Short Description'
-              fullWidth
-              margin='normal'
-              error={!!errors.shortDescription}
-              helperText={errors.shortDescription?.message}
+            <Controller
+              name='shortDescription'
+              control={methods.control}
+              rules={{ required: 'Short Description is required' }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label='Short Description'
+                  fullWidth
+                  margin='normal'
+                  error={!!errors.shortDescription}
+                  helperText={errors.shortDescription?.message}
+                />
+              )}
             />
-
             <input
               accept='image/*'
               id='upload-image'
@@ -151,7 +161,6 @@ const RelatoryDialog: React.FC = () => {
                 }
               }}
             />
-
             <label htmlFor='upload-image'>
               <Button variant='outlined' component='span' startIcon={<UploadFileIcon />} sx={{ mt: 2 }} fullWidth>
                 Selecionar Imagem
@@ -192,21 +201,27 @@ const RelatoryDialog: React.FC = () => {
               </Button>
             )}
             {showLongDescription && (
-              <TextField
-                {...register('longDescription')}
-                label='Long Description'
-                error={!!errors.longDescription}
-                helperText={errors.longDescription?.message}
-                fullWidth
-                multiline
-                rows={4}
-                margin='normal'
+              <Controller
+                name='longDescription'
+                control={methods.control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label='Long Description'
+                    fullWidth
+                    multiline
+                    rows={4}
+                    margin='normal'
+                    error={!!errors.longDescription}
+                    helperText={errors.longDescription?.message}
+                  />
+                )}
               />
             )}
           </DialogContent>
 
           <DialogActions>
-            <Button variant='contained' onClick={handleSubmit(onSubmit, errors => console.log(errors))}>
+            <Button variant='contained' onClick={handleSubmit(onSubmit)}>
               Add
             </Button>
             <Button onClick={handleClose}>Cancel</Button>
