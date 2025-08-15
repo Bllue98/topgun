@@ -20,7 +20,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { styled } from '@mui/material/styles'
 import { Controller, FormProvider, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { relatorySchema, RelatoryData } from './Schemas'
+import { reportSchema, ReportData } from '../../../schemas/ReportSchema'
 
 const ExpandMore = styled(IconButton, {
   shouldForwardProp: prop => prop !== 'expand'
@@ -32,15 +32,15 @@ const ExpandMore = styled(IconButton, {
   })
 }))
 
-const RelatoryDialog: React.FC = () => {
+const ReportDialog: React.FC = () => {
   const [open, setOpen] = useState(false)
-  const [cards, setCards] = useState<RelatoryData[]>([])
+  const [cards, setCards] = useState<ReportData[]>([])
   const [expanded, setExpanded] = useState<{ [key: number]: boolean }>({})
   const [showLongDescription, setShowLongDescription] = useState(false)
   const [selectedFileName, setSelectedFileName] = useState('')
 
-  const methods = useForm<RelatoryData>({
-    resolver: zodResolver(relatorySchema),
+  const methods = useForm<ReportData>({
+    resolver: zodResolver(reportSchema),
     defaultValues: {
       title: '',
       date: '',
@@ -66,7 +66,7 @@ const RelatoryDialog: React.FC = () => {
     setShowLongDescription(false)
   }
 
-  const onSubmit = (data: RelatoryData) => {
+  const onSubmit = (data: ReportData) => {
     setCards(prev => {
       const next = [...prev, data]
       setExpanded(exp => ({ ...exp, [next?.length - 1]: false }))
@@ -93,12 +93,12 @@ const RelatoryDialog: React.FC = () => {
   return (
     <>
       <Button variant='contained' onClick={handleOpen}>
-        Add Relatory
+        Add Report
       </Button>
 
       <FormProvider {...methods}>
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth='sm'>
-          <DialogTitle>New Relatory</DialogTitle>
+          <DialogTitle>New Report</DialogTitle>
           <DialogContent dividers>
             <Controller
               name='title'
@@ -288,4 +288,4 @@ const RelatoryDialog: React.FC = () => {
   )
 }
 
-export default RelatoryDialog
+export default ReportDialog

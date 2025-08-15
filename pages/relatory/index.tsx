@@ -1,9 +1,9 @@
 // ** MUI Imports
 import Grid from '@mui/material/Grid'
-import RelatoryDialog from 'src/views/dashboards/relatory/RelatoryDialog'
+import RelatoryDialog from 'src/views/dashboards/report/RelatoryDialog'
 
 // import RelatoryDialog from 'src/views/dashboards/relatory/RelatoryDialog'
-import RelatoryZodForm from 'src/views/dashboards/relatory/RelatoryZodForm'
+import RelatoryZodForm from 'src/views/dashboards/report/ReportDialog'
 
 const Relatory = () => {
   return (
