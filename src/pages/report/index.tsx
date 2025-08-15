@@ -1,15 +1,15 @@
 // ** MUI Imports
 import Grid from '@mui/material/Grid'
-import TalentManager from 'src/views/dashboards/talents/TalentManager'
+import ReportDialog from 'src/views/dashboards/report/ReportDialog'
 
-const Talent = () => {
+const Report = () => {
   return (
     <Grid container spacing={6}>
       <Grid item xs={12}>
-        <TalentManager />
+        <ReportDialog />
       </Grid>
     </Grid>
   )
 }
 
-export default Talent
+export default Report

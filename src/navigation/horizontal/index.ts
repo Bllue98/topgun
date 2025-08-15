@@ -8,13 +8,13 @@ const navigation = (): HorizontalNavItemsType => [
     icon: 'tabler:smart-home'
   },
   {
-    title: 'Second Page',
-    path: '/second-page',
+    title: 'Talents',
+    path: '/talents',
     icon: 'tabler:mail'
   },
   {
-    title: 'Relatory',
-    path: '/relatory',
+    title: 'Report',
+    path: '/report',
     icon: 'tabler:mail'
   },
   {
