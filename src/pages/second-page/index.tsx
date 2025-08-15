@@ -73,8 +73,8 @@ const TalentManager: React.FC = () => {
   const handleAddTalent = () => {
     const result = talentSchema.safeParse(formData)
     if (!result.success) {
-      const formattedErrors = z.treeifyError(result.error)
-      console.log('Erros de validação:', formattedErrors)
+      const formattedErrors = result.error.format()
+      console.log('Validation errors:', formattedErrors)
 
       return
     }
