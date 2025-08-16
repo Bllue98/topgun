@@ -15,25 +15,10 @@ import {
   FormControlLabel,
   Switch
 } from '@mui/material'
-import { z } from 'zod'
 
-interface TalentData {
-  name: string
-  description: string
-  effect: string // Buff ou Dano
-  cost: string
-  rarity: string // Comum, Raro, Lendário
-  isKeyTalent: boolean
-}
+import { talentSchema, TalentData } from '../../../schemas/TalentSchema'
 
-const talentSchema = z.object({
-  name: z.string().min(1, 'O nome é obrigatório'),
-  description: z.string().min(1, 'A descrição é obrigatória'),
-  effect: z.string().min(1, 'O efeito é obrigatório').default('Nenhum'),
-  cost: z.string().optional().default('Nenhum'), // opcional
-  rarity: z.enum(['Comum', 'Raro', 'Lendário']).default('Comum'), // só pode ser um dos três
-  isKeyTalent: z.boolean().default(false) // false ou true
-})
+const attributes = ['Strength', 'Agility', 'Intelligence']
 
 const TalentManager: React.FC = () => {
   const [open, setOpen] = useState(false)
@@ -44,21 +29,9 @@ const TalentManager: React.FC = () => {
     effect: '',
     cost: '',
     rarity: 'Comum',
-    isKeyTalent: false
+    isKeyTalent: false,
+    requisites: {}
   })
-
-  const handleOpen = () => setOpen(true)
-  const handleClose = () => {
-    setOpen(false)
-    setFormData({
-      name: '',
-      description: '',
-      effect: '',
-      cost: '',
-      rarity: 'Comum',
-      isKeyTalent: false
-    })
-  }
 
   const rarityColors: Record<string, string> = {
     Comum: 'gray',
@@ -73,8 +46,7 @@ const TalentManager: React.FC = () => {
   const handleAddTalent = () => {
     const result = talentSchema.safeParse(formData)
     if (!result.success) {
-      const formattedErrors = result.error.format()
-      console.log('Validation errors:', formattedErrors)
+      console.log('Validation errors:', result.error.format())
 
       return
     }
@@ -83,24 +55,38 @@ const TalentManager: React.FC = () => {
     handleClose()
   }
 
+  const handleOpen = () => setOpen(true)
+  const handleClose = () => {
+    setOpen(false)
+    setFormData({
+      name: '',
+      description: '',
+      effect: '',
+      cost: '',
+      rarity: 'Comum',
+      isKeyTalent: false,
+      requisites: {}
+    })
+  }
+
   return (
     <>
       <Button variant='contained' onClick={handleOpen}>
-        Adicionar Talento
+        Add Talent
       </Button>
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth='sm'>
-        <DialogTitle>Novo Talento</DialogTitle>
+        <DialogTitle>New Talent</DialogTitle>
         <DialogContent dividers>
           <TextField
-            label='Talento'
+            label='Talent'
             fullWidth
             margin='normal'
             value={formData.name}
             onChange={e => handleChange('name', e.target.value)}
           />
           <TextField
-            label='Descrição'
+            label='Description'
             fullWidth
             multiline
             rows={3}
@@ -109,14 +95,14 @@ const TalentManager: React.FC = () => {
             onChange={e => handleChange('description', e.target.value)}
           />
           <TextField
-            label='Efeito'
+            label='Effect'
             fullWidth
             margin='normal'
             value={formData.effect}
             onChange={e => handleChange('effect', e.target.value)}
           />
           <TextField
-            label='Custo'
+            label='Cost'
             fullWidth
             margin='normal'
             value={formData.cost}
@@ -124,23 +110,44 @@ const TalentManager: React.FC = () => {
           />
           <TextField
             select
-            label='Raridade'
+            label='Rarity'
             fullWidth
             margin='normal'
             value={formData.rarity}
             onChange={e => handleChange('rarity', e.target.value)}
           >
-            <MenuItem value='Comum'>Comum</MenuItem>
-            <MenuItem value='Raro'>Raro</MenuItem>
-            <MenuItem value='Lendário'>Lendário</MenuItem>
+            <MenuItem value='Comum'>Common</MenuItem>
+            <MenuItem value='Raro'>Rare</MenuItem>
+            <MenuItem value='Lendário'>Legendary</MenuItem>
           </TextField>
           <FormControlLabel
             control={
               <Switch checked={formData.isKeyTalent} onChange={e => handleChange('isKeyTalent', e.target.checked)} />
             }
-            label='Talento Chave'
+            label='Key Talent'
             sx={{ mt: 1 }}
           />
+
+          <Typography variant='subtitle1' sx={{ mt: 2 }}>
+            Attribute Requisites
+          </Typography>
+          {attributes.map(attr => (
+            <TextField
+              key={attr}
+              label={`${attr} minimum`}
+              type='number'
+              fullWidth
+              margin='normal'
+              value={formData.requisites?.[attr] ?? ''}
+              onChange={e => {
+                const value = e.target.value ? parseInt(e.target.value) : 0
+                setFormData(prev => ({
+                  ...prev,
+                  requisites: { ...prev.requisites, [attr]: value }
+                }))
+              }}
+            />
+          ))}
         </DialogContent>
         <DialogActions>
           <Button variant='contained' onClick={handleAddTalent}>
@@ -163,7 +170,7 @@ const TalentManager: React.FC = () => {
                 }
                 subheader={
                   <>
-                    <Typography component='span' sx={{ color: '#3f85e0ff', fontWeight: 'bold' }}>
+                    <Typography component='span' sx={{ color: 'rgb(228, 230, 244)', fontWeight: 'bold' }}>
                       {t.cost}
                     </Typography>
                     {' | '}
@@ -173,7 +180,6 @@ const TalentManager: React.FC = () => {
                   </>
                 }
               />
-
               <CardContent>
                 <Typography variant='body2' sx={{ mb: 1 }}>
                   {t.description}
@@ -181,6 +187,15 @@ const TalentManager: React.FC = () => {
                 <Typography variant='subtitle2' color='primary'>
                   {t.effect}
                 </Typography>
+
+                {t.requisites && Object.keys(t.requisites).length > 0 && (
+                  <Typography variant='caption' color='textSecondary'>
+                    Requisites:{' '}
+                    {Object.entries(t.requisites)
+                      .map(([attr, val]) => `${attr} ≥ ${val}`)
+                      .join(', ')}
+                  </Typography>
+                )}
               </CardContent>
             </Card>
           </Grid>
