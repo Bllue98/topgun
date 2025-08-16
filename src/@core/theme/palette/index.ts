@@ -3,12 +3,16 @@ import { Palette } from '@mui/material'
 import { Skin } from 'src/@core/layouts/types'
 
 const DefaultPalette = (mode: Palette['mode'], skin: Skin): Palette => {
-  // ** Vars
   const whiteColor = '#FFF'
-  const lightColor = '51, 48, 60'
-  const darkColor = '228, 230, 244'
+
+  const lightRgb = '51, 48, 60'
+  const darkRgb = '228, 230, 244'
+
+  const lightHex = '#33303C'
+  const darkHex = '#E4E6F4'
   const darkPaperBgColor = '#2F3349'
-  const mainColor = mode === 'light' ? lightColor : darkColor
+  const mainRgb = mode === 'light' ? lightRgb : darkRgb
+  const mainHex = mode === 'light' ? lightHex : darkHex
 
   const defaultBgColor = () => {
     if (skin === 'bordered' && mode === 'light') {
@@ -22,9 +26,9 @@ const DefaultPalette = (mode: Palette['mode'], skin: Skin): Palette => {
 
   return {
     customColors: {
-      dark: darkColor,
-      main: mainColor,
-      light: lightColor,
+      dark: darkHex,
+      main: mainHex,
+      light: lightHex,
       lightPaperBg: whiteColor,
       darkPaperBg: darkPaperBgColor,
       bodyBg: mode === 'light' ? '#F8F7FA' : '#25293C', // Same as palette.background.default but doesn't consider bordered skin
@@ -90,22 +94,22 @@ const DefaultPalette = (mode: Palette['mode'], skin: Skin): Palette => {
       A700: '#616161'
     },
     text: {
-      primary: `rgba(${mainColor}, 0.87)`,
-      secondary: `rgba(${mainColor}, 0.6)`,
-      disabled: `rgba(${mainColor}, 0.38)`
+      primary: `rgba(${mainRgb}, 0.87)`,
+      secondary: `rgba(${mainRgb}, 0.6)`,
+      disabled: `rgba(${mainRgb}, 0.38)`
     },
-    divider: `rgba(${mainColor}, 0.12)`,
+    divider: `rgba(${mainRgb}, 0.12)`,
     background: {
       paper: mode === 'light' ? whiteColor : darkPaperBgColor,
       default: defaultBgColor()
     },
     action: {
-      active: `rgba(${mainColor}, 0.54)`,
-      hover: `rgba(${mainColor}, 0.04)`,
-      selected: `rgba(${mainColor}, 0.08)`,
-      disabled: `rgba(${mainColor}, 0.26)`,
-      disabledBackground: `rgba(${mainColor}, 0.12)`,
-      focus: `rgba(${mainColor}, 0.12)`
+      active: `rgba(${mainRgb}, 0.54)`,
+      hover: `rgba(${mainRgb}, 0.04)`,
+      selected: `rgba(${mainRgb}, 0.08)`,
+      disabled: `rgba(${mainRgb}, 0.26)`,
+      disabledBackground: `rgba(${mainRgb}, 0.12)`,
+      focus: `rgba(${mainRgb}, 0.12)`
     }
   } as Palette
 }
