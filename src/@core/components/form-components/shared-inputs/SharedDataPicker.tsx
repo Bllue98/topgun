@@ -34,12 +34,12 @@ const SharedDatePicker: React.FC<SharedDatePickerProps> = ({
           rules={{ required }}
           render={({ field, fieldState }) => (
             <DatePicker
-              value={field.value ? dayjs(field.value) : null}
+              value={field.value ? dayjs(field.value, 'YYYY-MM-DD', true) : null}
               onChange={date => {
-                if (date && dayjs(date).isValid()) {
-                  field.onChange(dayjs(date).toISOString())
+                if (date && date.isValid()) {
+                  field.onChange(date.format('YYYY-MM-DD'))
                 } else {
-                  field.onChange(null)
+                  field.onChange('')
                 }
               }}
               disabled={disabled}
@@ -49,7 +49,7 @@ const SharedDatePicker: React.FC<SharedDatePickerProps> = ({
               slotProps={{
                 textField: {
                   fullWidth: true,
-                  size: 'small',
+                  margin: 'normal',
                   label,
                   error: !!fieldState.error,
                   helperText: fieldState.error?.message,
