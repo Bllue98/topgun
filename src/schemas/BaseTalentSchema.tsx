@@ -11,15 +11,21 @@ const DurationSchema = z.discriminatedUnion('type', [
 ])
 
 export const RequirementSchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('level'), min: z.number().int().positive() }),
-  z.object({ kind: z.literal('stat'), stat: z.string().min(1), min: z.number() }),
-  z.object({ kind: z.literal('talent'), talentId: z.string().min(1) }),
-  z.object({ kind: z.literal('tag'), tag: z.string().min(1), count: z.number().int().positive().optional() }),
-  z.object({ kind: z.literal('class'), classId: z.string().min(1) })
+  z.object({ id: z.string().min(1).optional(), kind: z.literal('level'), min: z.number().int().positive() }),
+  z.object({ id: z.string().min(1).optional(), kind: z.literal('stat'), stat: z.string().min(1), min: z.number() }),
+  z.object({ id: z.string().min(1).optional(), kind: z.literal('talent'), talentId: z.string().min(1) }),
+  z.object({
+    id: z.string().min(1).optional(),
+    kind: z.literal('tag'),
+    tag: z.string().min(1),
+    count: z.number().int().positive().optional()
+  }),
+  z.object({ id: z.string().min(1).optional(), kind: z.literal('class'), classId: z.string().min(1) })
 ])
 
 export const CostComponentSchema = z.discriminatedUnion('kind', [
   z.object({
+    id: z.string().min(1).optional(),
     kind: z.literal('resource'),
     resource: z.enum(['mana', 'stamina', 'gold', 'energy', 'item']),
     amount: z.number().nonnegative(),
@@ -27,10 +33,12 @@ export const CostComponentSchema = z.discriminatedUnion('kind', [
     itemId: z.string().optional()
   }),
   z.object({
+    id: z.string().min(1).optional(),
     kind: z.literal('cooldown'),
     turns: z.number().int().nonnegative()
   }),
   z.object({
+    id: z.string().min(1).optional(),
     kind: z.literal('charges'),
     max: z.number().int().positive(),
     recharge: z.enum(['short-rest', 'long-rest', 'time']).optional()
@@ -38,6 +46,7 @@ export const CostComponentSchema = z.discriminatedUnion('kind', [
 ])
 
 export const RaritySchema = z.object({
+  id: z.string().min(1).optional(),
   tier: z.enum(['common', 'uncommon', 'rare', 'epic', 'legendary']).default('common'),
   weight: z.number().nonnegative().default(1), // drop weighting or selection weight
   color: HexColor.optional()
@@ -45,6 +54,7 @@ export const RaritySchema = z.object({
 
 export const EffectSchema = z.discriminatedUnion('kind', [
   z.object({
+    id: z.string().min(1).optional(),
     kind: z.literal('stat-mod'),
     target: z.enum(['self', 'ally', 'enemy']).default('enemy'),
     stat: z.string().min(1),
@@ -54,6 +64,7 @@ export const EffectSchema = z.discriminatedUnion('kind', [
     stacking: z.enum(['none', 'stack', 'refresh']).default('none')
   }),
   z.object({
+    id: z.string().min(1).optional(),
     kind: z.literal('damage'),
     target: z.enum(['enemy', 'area']).default('enemy'),
     damageType: z.string().min(1),
@@ -61,12 +72,14 @@ export const EffectSchema = z.discriminatedUnion('kind', [
     duration: DurationSchema.default({ type: 'instant' })
   }),
   z.object({
+    id: z.string().min(1).optional(),
     kind: z.literal('heal'),
     target: z.enum(['self', 'ally', 'area']).default('ally'),
     amount: z.number().positive(),
     duration: DurationSchema.default({ type: 'instant' })
   }),
   z.object({
+    id: z.string().min(1).optional(),
     kind: z.literal('tag'),
     action: z.enum(['add', 'remove']),
     tag: z.string().min(1),
