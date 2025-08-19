@@ -19,7 +19,7 @@ export const talentMetaSchema = z.object({
 })
 
 // Requisites (attribute requirements)
-export const talentRequisitesSchema = z.record(z.number().min(0)).optional().default({})
+export const talentRequisitesSchema = z.record(z.coerce.number().min(0).optional()).optional().default({})
 
 // Full Talent schema
 export const talentSchema = talentBaseInfoSchema.merge(talentEffectSchema).merge(talentMetaSchema).extend({
