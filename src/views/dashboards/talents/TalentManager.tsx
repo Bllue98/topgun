@@ -16,8 +16,9 @@ import {
 } from '@mui/material'
 import { useForm, Controller } from 'react-hook-form'
 import SharedTextField from '../../../@core/components/form-components/shared-inputs/SharedTextField'
-import { TalentSchema, Talent } from '../../../schemas/BaseTalentSchema'
 import EffectsSection from '../../../@core/components/form-components/talent/effect'
+import CostsSection from '../../../@core/components/form-components/talent/cost'
+import { TalentSchema, Talent } from '../../../schemas/BaseTalentSchema'
 
 const TalentManager: React.FC = () => {
   const [open, setOpen] = useState(false)
@@ -41,8 +42,6 @@ const TalentManager: React.FC = () => {
       cooldown: 0,
       rank: 1,
       maxRank: 1
-
-      // Add any other required fields from BaseAttributeSchema if needed
     }
   })
 
@@ -52,7 +51,7 @@ const TalentManager: React.FC = () => {
     legendary: 'rgba(8, 131, 255, 1)'
   }
 
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: Talent) => {
     const result = TalentSchema.safeParse(data)
     if (!result.success) {
       console.log('Validation errors:', result.error.format())
@@ -80,7 +79,10 @@ const TalentManager: React.FC = () => {
         <DialogContent dividers>
           <SharedTextField control={control} name='name' label='Talent' required />
           <SharedTextField control={control} name='description' label='Description' multiline rows={3} required />
-          <SharedTextField control={control} name='cost' label='Cost' required />
+
+          {/* Costs */}
+
+          <CostsSection control={control} />
 
           {/* Effects */}
           <Typography variant='subtitle1' sx={{ mt: 2 }}>
@@ -110,9 +112,9 @@ const TalentManager: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button variant='contained' onClick={handleSubmit(onSubmit)}>
-            Adicionar
+            Add
           </Button>
-          <Button onClick={handleClose}>Cancelar</Button>
+          <Button onClick={handleClose}>Cancel</Button>
         </DialogActions>
       </Dialog>
 
@@ -124,40 +126,38 @@ const TalentManager: React.FC = () => {
                 title={
                   <Typography variant='h6'>
                     <span style={{ color: rarityColors[t.rarity.tier] }}>{t.name}</span>
-                    {t.isKeyTalent && <span style={{ color: 'rgba(212, 212, 212, 1)' }}> - Chave</span>}
+                    {t.isKeyTalent && <span style={{ color: 'rgba(212, 212, 212, 1)' }}> - Key</span>}
                   </Typography>
                 }
                 subheader={
-                  <>
-                    <Typography component='span' sx={{ color: 'rgba(160, 160, 160, 1)' }}>
-                      {t.rarity.tier}
-                    </Typography>
-                  </>
+                  <Typography component='span' sx={{ color: 'rgba(160, 160, 160, 1)' }}>
+                    {t.rarity.tier}
+                  </Typography>
                 }
               />
               <CardContent>
                 <Typography variant='body2' sx={{ mb: 1 }}>
                   {t.description}
                 </Typography>
-                <Typography variant='subtitle2' color='primary'>
-                  {t.effects[0]?.kind === 'stat-mod' ? t.effects[0].stat : t.effects[0]?.kind}
-                </Typography>
-                {t.requirements && Object.entries(t.requirements).some(([, val]) => val !== undefined) && (
-                  <Typography variant='caption' color='textSecondary'>
-                    Requisites:{' '}
-                    {Object.entries(t.requirements)
-                      .filter(([, val]) => val !== undefined)
-                      .map(([attr, val]) => `${attr} ≥ ${val}`)
-                      .join(', ')}
+
+                {t.effects.length > 0 && (
+                  <Typography variant='subtitle2' color='primary'>
+                    {t.effects[0].kind === 'stat-mod' ? t.effects[0].stat : t.effects[0].kind}
                   </Typography>
                 )}
-                <Typography component='span' sx={{ color: 'rgb(228, 230, 244)', fontWeight: 'bold' }}>
-                  {t.costs[0]?.kind === 'resource'
-                    ? t.costs[0].amount
-                    : t.costs[0]?.kind === 'cooldown'
-                    ? `${t.costs[0].turns} turns cooldown`
-                    : t.costs[0]?.kind ?? '—'}
-                </Typography>
+
+                {t.costs.length > 0 && (
+                  <>
+                    <Typography variant='subtitle2' sx={{ mt: 1 }}>
+                      Costs:
+                    </Typography>
+                    {t.costs.map((cost, idx) => (
+                      <Typography key={idx} variant='body2'>
+                        {cost.resource}: {cost.amount ?? 'N/A'} {cost.maxUses ? `(Max: ${cost.maxUses})` : ''}
+                      </Typography>
+                    ))}
+                  </>
+                )}
               </CardContent>
             </Card>
           </Grid>

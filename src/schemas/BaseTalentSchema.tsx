@@ -25,27 +25,30 @@ export const RequirementSchema = z.discriminatedUnion('kind', [
   z.object({ id: z.string().min(1).optional(), kind: z.literal('class'), classId: z.string().min(1) })
 ])
 
-export const CostComponentSchema = z.discriminatedUnion('kind', [
-  z.object({
+export const CostComponentSchema = z
+  .object({
     id: z.string().min(1).optional(),
     kind: z.literal('resource'),
-    resource: z.enum(['mana', 'stamina', 'gold', 'energy', 'item']),
-    amount: z.number().nonnegative(),
-    per: z.enum(['cast', 'turn', 'second']).default('cast').optional(),
-    itemId: z.string().optional()
-  }),
-  z.object({
-    id: z.string().min(1).optional(),
-    kind: z.literal('cooldown'),
-    turns: z.number().int().nonnegative()
-  }),
-  z.object({
-    id: z.string().min(1).optional(),
-    kind: z.literal('charges'),
-    max: z.number().int().positive(),
-    recharge: z.enum(['short-rest', 'long-rest', 'time']).optional()
+    resource: z.enum(['ether', 'stamina', 'none']).default('none'),
+    amount: z.number().positive().optional(),
+    maxUses: z.number().int().positive().optional()
   })
-])
+  .superRefine((val, ctx) => {
+    if (val.resource === 'stamina' && val.maxUses) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Stamina cannot have maxUses',
+        path: ['maxUses']
+      })
+    }
+    if (val.resource === 'none' && val.amount) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'None cannot have amount',
+        path: ['amount']
+      })
+    }
+  })
 
 export const RaritySchema = z.object({
   id: z.string().min(1).optional(),
