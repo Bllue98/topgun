@@ -153,7 +153,11 @@ const TalentManager: React.FC = () => {
                     </Typography>
                     {t.costs.map((cost, idx) => (
                       <Typography key={idx} variant='body2'>
-                        {cost.resource}: {cost.amount ?? 'N/A'} {cost.maxUses ? `(Max: ${cost.maxUses})` : ''}
+                        {cost.resource}:{' '}
+                        {typeof cost.amount === 'number' ? cost.amount : cost.amount ? Number(cost.amount) : 'N/A'}{' '}
+                        {cost.maxUses
+                          ? `(Max: ${typeof cost.maxUses === 'number' ? cost.maxUses : Number(cost.maxUses)})`
+                          : ''}
                       </Typography>
                     ))}
                   </>
