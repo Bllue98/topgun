@@ -16,40 +16,49 @@ import {
 } from '@mui/material'
 import { useForm, Controller } from 'react-hook-form'
 import SharedTextField from '../../../@core/components/form-components/shared-inputs/SharedTextField'
-import { talentSchema, TalentData } from '../../../schemas/TalentSchema'
-
-const attributes = ['Strength', 'Agility', 'Intelligence']
+import { TalentSchema, Talent } from '../../../schemas/BaseTalentSchema'
+import EffectsSection from '../../../@core/components/form-components/talent/effect'
 
 const TalentManager: React.FC = () => {
   const [open, setOpen] = useState(false)
-  const [talents, setTalents] = useState<TalentData[]>([])
+  const [talents, setTalents] = useState<Talent[]>([])
 
-  const { control, handleSubmit, reset, setValue } = useForm<TalentData>({
+  const { control, handleSubmit, reset } = useForm<Talent>({
     defaultValues: {
       name: '',
       description: '',
-      effect: '',
-      cost: '',
-      rarity: 'Comum',
       isKeyTalent: false,
-      requisites: {}
+      tags: [],
+      category: '',
+      requirements: [],
+      costs: [],
+      rarity: {
+        tier: 'common',
+        weight: 1,
+        color: undefined
+      },
+      effects: [],
+      cooldown: 0,
+      rank: 1,
+      maxRank: 1
+
+      // Add any other required fields from BaseAttributeSchema if needed
     }
   })
 
   const rarityColors: Record<string, string> = {
-    Comum: 'gray',
-    Raro: 'red',
-    Lendário: 'rgba(8, 131, 255, 1)'
+    common: 'gray',
+    rare: 'red',
+    legendary: 'rgba(8, 131, 255, 1)'
   }
 
-  const onSubmit = (data: TalentData) => {
-    const result = talentSchema.safeParse(data)
+  const onSubmit = (data: any) => {
+    const result = TalentSchema.safeParse(data)
     if (!result.success) {
       console.log('Validation errors:', result.error.format())
 
       return
     }
-
     setTalents(prev => [...prev, result.data])
     handleClose()
   }
@@ -71,21 +80,20 @@ const TalentManager: React.FC = () => {
         <DialogContent dividers>
           <SharedTextField control={control} name='name' label='Talent' required />
           <SharedTextField control={control} name='description' label='Description' multiline rows={3} required />
-          <SharedTextField control={control} name='effect' label='Effect' required />
           <SharedTextField control={control} name='cost' label='Cost' required />
 
+          {/* Effects */}
+          <Typography variant='subtitle1' sx={{ mt: 2 }}>
+            Effects
+          </Typography>
+          <EffectsSection control={control} />
+
           {/* Rarity */}
-          <Controller
-            name='rarity'
-            control={control}
-            render={({ field }) => (
-              <SharedTextField {...field} control={control} name='rarity' label='Rarity' select>
-                <MenuItem value='Comum'>Common</MenuItem>
-                <MenuItem value='Raro'>Rare</MenuItem>
-                <MenuItem value='Lendário'>Legendary</MenuItem>
-              </SharedTextField>
-            )}
-          />
+          <SharedTextField control={control} name='rarity.tier' label='Rarity' select>
+            <MenuItem value='common'>Common</MenuItem>
+            <MenuItem value='rare'>Rare</MenuItem>
+            <MenuItem value='legendary'>Legendary</MenuItem>
+          </SharedTextField>
 
           {/* Key Talent */}
           <Controller
@@ -99,24 +107,6 @@ const TalentManager: React.FC = () => {
               />
             )}
           />
-
-          <Typography variant='subtitle1' sx={{ mt: 2 }}>
-            Attribute Requisites
-          </Typography>
-          {attributes.map(attr => (
-            <SharedTextField
-              key={attr}
-              control={control}
-              name={`requisites.${attr}`}
-              label={`${attr} minimum`}
-              type='number'
-              onChange={e => {
-                const raw = e.target.value
-                const value = raw === '' ? undefined : parseInt(raw, 10)
-                setValue(`requisites.${attr}` as any, value)
-              }}
-            />
-          ))}
         </DialogContent>
         <DialogActions>
           <Button variant='contained' onClick={handleSubmit(onSubmit)}>
@@ -133,18 +123,14 @@ const TalentManager: React.FC = () => {
               <CardHeader
                 title={
                   <Typography variant='h6'>
-                    <span style={{ color: rarityColors[t.rarity] }}>{t.name}</span>
+                    <span style={{ color: rarityColors[t.rarity.tier] }}>{t.name}</span>
                     {t.isKeyTalent && <span style={{ color: 'rgba(212, 212, 212, 1)' }}> - Chave</span>}
                   </Typography>
                 }
                 subheader={
                   <>
-                    <Typography component='span' sx={{ color: 'rgb(228, 230, 244)', fontWeight: 'bold' }}>
-                      {t.cost}
-                    </Typography>
-                    {' | '}
                     <Typography component='span' sx={{ color: 'rgba(160, 160, 160, 1)' }}>
-                      {t.rarity}
+                      {t.rarity.tier}
                     </Typography>
                   </>
                 }
@@ -154,17 +140,24 @@ const TalentManager: React.FC = () => {
                   {t.description}
                 </Typography>
                 <Typography variant='subtitle2' color='primary'>
-                  {t.effect}
+                  {t.effects[0]?.kind === 'stat-mod' ? t.effects[0].stat : t.effects[0]?.kind}
                 </Typography>
-                {t.requisites && Object.entries(t.requisites).some(([, val]) => val !== undefined) && (
+                {t.requirements && Object.entries(t.requirements).some(([, val]) => val !== undefined) && (
                   <Typography variant='caption' color='textSecondary'>
                     Requisites:{' '}
-                    {Object.entries(t.requisites)
+                    {Object.entries(t.requirements)
                       .filter(([, val]) => val !== undefined)
                       .map(([attr, val]) => `${attr} ≥ ${val}`)
                       .join(', ')}
                   </Typography>
                 )}
+                <Typography component='span' sx={{ color: 'rgb(228, 230, 244)', fontWeight: 'bold' }}>
+                  {t.costs[0]?.kind === 'resource'
+                    ? t.costs[0].amount
+                    : t.costs[0]?.kind === 'cooldown'
+                    ? `${t.costs[0].turns} turns cooldown`
+                    : t.costs[0]?.kind ?? '—'}
+                </Typography>
               </CardContent>
             </Card>
           </Grid>

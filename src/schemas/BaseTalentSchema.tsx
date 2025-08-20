@@ -10,6 +10,8 @@ const DurationSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('seconds'), amount: z.number().positive() })
 ])
 
+const DiceExpression = z.string().regex(/^\d*d\d+([+-]\d+)?$/, 'Must be a dice expression like 1d8+2')
+
 export const RequirementSchema = z.discriminatedUnion('kind', [
   z.object({ id: z.string().min(1).optional(), kind: z.literal('level'), min: z.number().int().positive() }),
   z.object({ id: z.string().min(1).optional(), kind: z.literal('stat'), stat: z.string().min(1), min: z.number() }),
@@ -47,7 +49,7 @@ export const CostComponentSchema = z.discriminatedUnion('kind', [
 
 export const RaritySchema = z.object({
   id: z.string().min(1).optional(),
-  tier: z.enum(['common', 'uncommon', 'rare', 'epic', 'legendary']).default('common'),
+  tier: z.enum(['common', 'rare', 'legendary']).default('common'),
   weight: z.number().nonnegative().default(1), // drop weighting or selection weight
   color: HexColor.optional()
 })
@@ -60,29 +62,21 @@ export const EffectSchema = z.discriminatedUnion('kind', [
     stat: z.string().min(1),
     op: z.enum(['add', 'mul', 'set']).default('add'),
     value: z.number(),
-    duration: DurationSchema.default({ type: 'instant' }),
-    stacking: z.enum(['none', 'stack', 'refresh']).default('none')
+    duration: DurationSchema.default({ type: 'instant' })
   }),
   z.object({
     id: z.string().min(1).optional(),
     kind: z.literal('damage'),
     target: z.enum(['enemy', 'area']).default('enemy'),
     damageType: z.string().min(1),
-    amount: z.number().positive(),
+    amount: z.union([z.number().positive(), DiceExpression]),
     duration: DurationSchema.default({ type: 'instant' })
   }),
   z.object({
     id: z.string().min(1).optional(),
     kind: z.literal('heal'),
     target: z.enum(['self', 'ally', 'area']).default('ally'),
-    amount: z.number().positive(),
-    duration: DurationSchema.default({ type: 'instant' })
-  }),
-  z.object({
-    id: z.string().min(1).optional(),
-    kind: z.literal('tag'),
-    action: z.enum(['add', 'remove']),
-    tag: z.string().min(1),
+    amount: z.union([z.number().positive(), DiceExpression]),
     duration: DurationSchema.default({ type: 'instant' })
   })
 ])
