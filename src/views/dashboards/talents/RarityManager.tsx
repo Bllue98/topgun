@@ -6,9 +6,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  List,
-  ListItem,
-  ListItemText,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
   Box
 } from '@mui/material'
 import { useForm, Controller } from 'react-hook-form'
@@ -93,23 +94,6 @@ const RarityManager: React.FC = () => {
             />
             <SharedTextField control={control} name='weight' label='Weight' type='number' required />
 
-            <List>
-              {rarities.map((rarity, i) => (
-                <ListItem key={i}>
-                  <Box
-                    sx={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: rarity.color,
-                      borderRadius: '50%',
-                      mr: 2
-                    }}
-                  />
-                  <ListItemText primary={rarity.name} />
-                </ListItem>
-              ))}
-            </List>
-
             <DialogActions>
               <Button type='submit' variant='outlined'>
                 Add
@@ -119,6 +103,37 @@ const RarityManager: React.FC = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Show all rarities as cards below */}
+      <Grid container spacing={2} sx={{ mt: 2 }}>
+        {rarities.map((rarity, i) => (
+          <Grid item xs={12} sm={6} md={4} key={i}>
+            <Card>
+              <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    backgroundColor: rarity.color,
+                    borderRadius: '50%',
+                    mr: 2,
+                    border: '1px solid #ccc'
+                  }}
+                />
+                <Box>
+                  <Typography variant='h6'>{rarity.name}</Typography>
+                  <Typography variant='body2' color='text.secondary'>
+                    Color: {rarity.color}
+                  </Typography>
+                  <Typography variant='body2' color='text.secondary'>
+                    Weight: {rarity.weight}
+                  </Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
     </>
   )
 }
