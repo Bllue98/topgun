@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
 import {
   Button,
@@ -6,7 +6,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   Card,
   CardHeader,
   CardContent,
@@ -18,9 +17,11 @@ import {
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import { styled } from '@mui/material/styles'
-import { Controller, FormProvider, useForm } from 'react-hook-form'
+import { FormProvider, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { relatorySchema, RelatoryData } from './Schemas'
+import { reportSchema, ReportData } from '../../../schemas/ReportSchema'
+import SharedTextField from 'src/@core/components/form-components/shared-inputs/SharedTextField'
+import SharedDatePicker from 'src/@core/components/form-components/shared-inputs/SharedDataPicker'
 
 const ExpandMore = styled(IconButton, {
   shouldForwardProp: prop => prop !== 'expand'
@@ -32,15 +33,15 @@ const ExpandMore = styled(IconButton, {
   })
 }))
 
-const RelatoryDialog: React.FC = () => {
+const ReportDialog: React.FC = () => {
   const [open, setOpen] = useState(false)
-  const [cards, setCards] = useState<RelatoryData[]>([])
+  const [cards, setCards] = useState<ReportData[]>([])
   const [expanded, setExpanded] = useState<{ [key: number]: boolean }>({})
   const [showLongDescription, setShowLongDescription] = useState(false)
   const [selectedFileName, setSelectedFileName] = useState('')
 
-  const methods = useForm<RelatoryData>({
-    resolver: zodResolver(relatorySchema),
+  const methods = useForm<ReportData>({
+    resolver: zodResolver(reportSchema),
     defaultValues: {
       title: '',
       date: '',
@@ -66,7 +67,7 @@ const RelatoryDialog: React.FC = () => {
     setShowLongDescription(false)
   }
 
-  const onSubmit = (data: RelatoryData) => {
+  const onSubmit = (data: ReportData) => {
     setCards(prev => {
       const next = [...prev, data]
       setExpanded(exp => ({ ...exp, [next?.length - 1]: false }))
@@ -82,70 +83,23 @@ const RelatoryDialog: React.FC = () => {
 
   const imageUrl = watch('image')
 
-  useEffect(() => {
-    return () => {
-      if (imageUrl && imageUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(imageUrl)
-      }
-    }
-  }, [imageUrl])
-
   return (
     <>
       <Button variant='contained' onClick={handleOpen}>
-        Add Relatory
+        Add Report
       </Button>
 
       <FormProvider {...methods}>
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth='sm'>
-          <DialogTitle>New Relatory</DialogTitle>
+          <DialogTitle>New Report</DialogTitle>
           <DialogContent dividers>
-            <Controller
-              name='title'
+            <SharedTextField control={methods.control} name='title' label='Title' required={true} />
+            <SharedDatePicker control={methods.control} name='date' label='Date' required={true} />
+            <SharedTextField
               control={methods.control}
-              rules={{ required: 'Title is required' }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label='Title'
-                  fullWidth
-                  margin='normal'
-                  error={!!errors.title}
-                  helperText={errors.title?.message}
-                />
-              )}
-            />
-            <Controller
-              name='date'
-              control={methods.control}
-              rules={{ required: 'Date is required' }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label='Date'
-                  type='date'
-                  fullWidth
-                  margin='normal'
-                  InputLabelProps={{ shrink: true }}
-                  error={!!errors.date}
-                  helperText={errors.date?.message}
-                />
-              )}
-            />
-            <Controller
               name='shortDescription'
-              control={methods.control}
-              rules={{ required: 'Short Description is required' }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label='Short Description'
-                  fullWidth
-                  margin='normal'
-                  error={!!errors.shortDescription}
-                  helperText={errors.shortDescription?.message}
-                />
-              )}
+              label='Short Description'
+              required={true}
             />
             <input
               accept='image/*'
@@ -155,8 +109,11 @@ const RelatoryDialog: React.FC = () => {
               onChange={e => {
                 const file = e.target.files?.[0]
                 if (file) {
-                  const imageUrl = URL.createObjectURL(file)
-                  setValue('image', imageUrl, { shouldDirty: true, shouldValidate: true })
+                  const reader = new FileReader()
+                  reader.onload = () => {
+                    setValue('image', reader.result as string, { shouldDirty: true, shouldValidate: true })
+                  }
+                  reader.readAsDataURL(file)
                   setSelectedFileName(file.name)
                 }
               }}
@@ -201,22 +158,7 @@ const RelatoryDialog: React.FC = () => {
               </Button>
             )}
             {showLongDescription && (
-              <Controller
-                name='longDescription'
-                control={methods.control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label='Long Description'
-                    fullWidth
-                    multiline
-                    rows={4}
-                    margin='normal'
-                    error={!!errors.longDescription}
-                    helperText={errors.longDescription?.message}
-                  />
-                )}
-              />
+              <SharedTextField control={methods.control} name='longDescription' label='Long Description' />
             )}
           </DialogContent>
 
@@ -288,4 +230,4 @@ const RelatoryDialog: React.FC = () => {
   )
 }
 
-export default RelatoryDialog
+export default ReportDialog

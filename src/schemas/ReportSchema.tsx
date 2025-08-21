@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const relatorySchema = z.object({
+export const reportSchema = z.object({
   title: z.string().nonempty({
     message: 'Title is required'
   }),
@@ -19,4 +19,4 @@ export const relatorySchema = z.object({
   image: z.string().optional()
 })
 
-export type RelatoryData = z.infer<typeof relatorySchema>
+export type ReportData = z.infer<typeof reportSchema>
