@@ -22,6 +22,7 @@ const EffectsSection: React.FC<Props> = ({ control }) => {
     <>
       {fields.map((field, index) => {
         const kind = effects[index]?.kind
+        const durationType = effects[index]?.duration?.type
 
         return (
           <Accordion key={field.id} defaultExpanded>
@@ -61,12 +62,23 @@ const EffectsSection: React.FC<Props> = ({ control }) => {
 
                   <SharedTextField control={control} name={`effects.${index}.op`} label='Operation' select>
                     <MenuItem value='add'>Add</MenuItem>
-                    <MenuItem value='mul'>Multiply</MenuItem>
-                    <MenuItem value='set'>Set</MenuItem>
+                    <MenuItem value='remove'>Remove</MenuItem>
                   </SharedTextField>
 
                   {/* value can now be a number OR dice string */}
-                  <SharedTextField control={control} name={`effects.${index}.value`} label='Value (e.g. 5 or 2d6+3)' />
+                  <Controller
+                    name={`effects.${index}.value`}
+                    control={control}
+                    render={({ field }) => (
+                      <SharedTextField
+                        {...field}
+                        control={control}
+                        label='Value (number or dice, ex: 5 or 1d8+2)'
+                        value={field.value ?? ''}
+                        onChange={e => field.onChange(e.target.value)}
+                      />
+                    )}
+                  />
                 </>
               )}
 
@@ -109,6 +121,22 @@ const EffectsSection: React.FC<Props> = ({ control }) => {
                   </SharedTextField>
                   <SharedTextField control={control} name={`effects.${index}.tag`} label='Tag' />
                 </>
+              )}
+
+              {/* Duration — applies to all kinds */}
+              <SharedTextField control={control} name={`effects.${index}.duration.type`} label='Duration' select>
+                <MenuItem value='instant'>Instant</MenuItem>
+                <MenuItem value='rounds'>Rounds</MenuItem>
+                <MenuItem value='permanent'>Permanent</MenuItem>
+              </SharedTextField>
+
+              {durationType === 'rounds' && (
+                <SharedTextField
+                  control={control}
+                  name={`effects.${index}.duration.value`}
+                  label='Number of Rounds'
+                  type='number'
+                />
               )}
             </AccordionDetails>
           </Accordion>

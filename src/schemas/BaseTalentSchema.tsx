@@ -63,15 +63,15 @@ export const EffectSchema = z.discriminatedUnion('kind', [
     kind: z.literal('stat-mod'),
     target: z.enum(['self', 'ally', 'enemy']).default('enemy'),
     stat: z.string().min(1),
-    op: z.enum(['add', 'mul', 'set']).default('add'),
-    value: z.number(),
+    op: z.enum(['add', 'remove']).default('add'),
+    value: z.union([z.number(), DiceExpression]),
     duration: DurationSchema.default({ type: 'instant' })
   }),
   z.object({
     id: z.string().min(1).optional(),
     kind: z.literal('damage'),
     target: z.enum(['enemy', 'area']).default('enemy'),
-    damageType: z.string().min(1),
+    damageType: z.string().min(1).optional(),
     amount: z.union([z.number().positive(), DiceExpression]),
     duration: DurationSchema.default({ type: 'instant' })
   }),
