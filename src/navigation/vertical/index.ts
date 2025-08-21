@@ -14,6 +14,21 @@ const navigation = (): VerticalNavItemsType => {
       icon: 'tabler:mail'
     },
     {
+      title: 'Rarities',
+      path: '/rarities',
+      icon: 'tabler:star'
+    },
+    {
+      title: 'Effects',
+      path: '/effects',
+      icon: 'tabler:sparkles'
+    },
+    {
+      title: 'Costs',
+      path: '/costs',
+      icon: 'tabler:coin'
+    },
+    {
       title: 'Report',
       path: '/report',
       icon: 'tabler:mail'

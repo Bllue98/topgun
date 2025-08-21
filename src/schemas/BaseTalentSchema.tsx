@@ -121,3 +121,5 @@ export type Rarity = z.infer<typeof RaritySchema>
 export type Effect = z.infer<typeof EffectSchema>
 
 export type Talent = z.infer<typeof TalentSchema>
+
+// Specific requirements. <<<<<<<< stuff like; Requires Heavy weapon proficiency, requires a shield, requires galebreathe attunement.
