@@ -10,7 +10,10 @@ const DurationSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('seconds'), amount: z.number().positive() })
 ])
 
-const DiceExpression = z.string().regex(/^\d*d\d+([+-]\d+)?$/, 'Must be a dice expression like 1d8+2')
+const NumberOrDice = z.union([
+  z.number().positive(),
+  z.string().regex(/^\d+$|^\d*d\d+([+-]\d+)?$/, 'Must be a number or dice expression like 5 or 1d8+2')
+])
 
 export const RequirementSchema = z.discriminatedUnion('kind', [
   z.object({ id: z.string().min(1).optional(), kind: z.literal('level'), min: z.number().int().positive() }),
@@ -64,7 +67,7 @@ export const EffectSchema = z.discriminatedUnion('kind', [
     target: z.enum(['self', 'ally', 'enemy']).default('enemy'),
     stat: z.string().min(1),
     op: z.enum(['add', 'remove']).default('add'),
-    value: z.union([z.number(), DiceExpression]),
+    value: z.union([z.number(), NumberOrDice]),
     duration: DurationSchema.default({ type: 'instant' })
   }),
   z.object({
@@ -72,14 +75,14 @@ export const EffectSchema = z.discriminatedUnion('kind', [
     kind: z.literal('damage'),
     target: z.enum(['enemy', 'area']).default('enemy'),
     damageType: z.string().min(1).optional(),
-    amount: z.union([z.number().positive(), DiceExpression]),
+    amount: z.union([z.number().positive(), NumberOrDice]),
     duration: DurationSchema.default({ type: 'instant' })
   }),
   z.object({
     id: z.string().min(1).optional(),
     kind: z.literal('heal'),
     target: z.enum(['self', 'ally', 'area']).default('ally'),
-    amount: z.union([z.number().positive(), DiceExpression]),
+    amount: z.union([z.number().positive(), NumberOrDice]),
     duration: DurationSchema.default({ type: 'instant' })
   })
 ])
