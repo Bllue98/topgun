@@ -26,12 +26,13 @@ import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormCo
 import Icon from 'src/@core/components/icon'
 
 // ** Third Party Imports
-import * as yup from 'yup'
 import { useForm, Controller } from 'react-hook-form'
-import { yupResolver } from '@hookform/resolvers/yup'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { loginSchema, LoginForm } from 'src/schemas/shared/authSchemas'
 
 // ** Hooks
-import { useAuth } from 'src/hooks/useAuth'
+import { useAppDispatch, useAppSelector } from 'src/store/hooks'
+import { login } from 'src/store/slices/authSlice'
 import useBgColor from 'src/@core/hooks/useBgColor'
 import { useSettings } from 'src/@core/hooks/useSettings'
 
@@ -84,19 +85,9 @@ const FormControlLabel = styled(MuiFormControlLabel)<FormControlLabelProps>(({ t
   }
 }))
 
-const schema = yup.object().shape({
-  email: yup.string().email().required(),
-  password: yup.string().min(5).required()
-})
-
 const defaultValues = {
   password: 'admin',
   email: 'admin@vuexy.com'
-}
-
-interface FormData {
-  email: string
-  password: string
 }
 
 const LoginPage = () => {
@@ -104,11 +95,12 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false)
 
   // ** Hooks
-  const auth = useAuth()
+  const dispatch = useAppDispatch()
   const theme = useTheme()
   const bgColors = useBgColor()
   const { settings } = useSettings()
   const hidden = useMediaQuery(theme.breakpoints.down('md'))
+  const authLoading = useAppSelector(state => state.auth.loading)
 
   // ** Vars
   const { skin } = settings
@@ -118,19 +110,18 @@ const LoginPage = () => {
     setError,
     handleSubmit,
     formState: { errors }
-  } = useForm({
+  } = useForm<LoginForm>({
     defaultValues,
     mode: 'onBlur',
-    resolver: yupResolver(schema)
+    resolver: zodResolver(loginSchema)
   })
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = (data: LoginForm) => {
     const { email, password } = data
-    auth.login({ email, password, rememberMe }, () => {
-      setError('email', {
-        type: 'manual',
-        message: 'Email or Password is invalid'
-      })
+    dispatch(login({ email, password, rememberMe }))
+    setError('email', {
+      type: 'manual',
+      message: 'Email or Password is invalid'
     })
   }
 
@@ -190,8 +181,8 @@ const LoginPage = () => {
               <path
                 fillRule='evenodd'
                 clipRule='evenodd'
-                fill={theme.palette.primary.main}
                 d='M7.77295 16.3566L23.6563 0H32V6.88383C32 6.88383 31.8262 9.17836 30.6591 10.4057L19.7824 22H13.6938L7.77295 16.3566Z'
+                fill={theme.palette.primary.main}
               />
             </svg>
             <Box sx={{ my: 6 }}>
@@ -282,7 +273,7 @@ const LoginPage = () => {
                 />
                 <LinkStyled href='/forgot-password'>Forgot Password?</LinkStyled>
               </Box>
-              <Button fullWidth size='large' type='submit' variant='contained' sx={{ mb: 4 }}>
+              <Button fullWidth size='large' type='submit' variant='contained' sx={{ mb: 4 }} disabled={authLoading}>
                 Login
               </Button>
               <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
