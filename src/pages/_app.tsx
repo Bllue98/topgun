@@ -41,7 +41,7 @@ import { SettingsConsumer, SettingsProvider } from 'src/@core/context/settingsCo
 
 // ** Redux Imports
 import { Provider } from 'react-redux'
-import { store } from 'src/store/index.ts'
+import { store } from 'src/store/index'
 
 // ** Styled Components
 import ReactHotToast from 'src/@core/styles/libs/react-hot-toast'

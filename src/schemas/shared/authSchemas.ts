@@ -11,7 +11,7 @@ export const registerSchema = z.object({
   username: z.string().min(1, { message: 'Username is required' }),
   email: z.string().email({ message: 'Invalid email' }),
   password: z.string().min(5, { message: 'Password must be at least 5 characters' }),
-  agree: z.literal(true, { errorMap: () => ({ message: 'You must accept the terms' }) })
+  agree: z.boolean().refine(val => val === true, { message: 'You must accept the terms' })
 })
 
 export type RegisterForm = z.infer<typeof registerSchema>
