@@ -3,22 +3,24 @@ import { ReactNode, useState } from 'react'
 
 // ** Next Import
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 
 // ** MUI Components
 import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
 import Checkbox from '@mui/material/Checkbox'
-import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import InputLabel from '@mui/material/InputLabel'
 import IconButton from '@mui/material/IconButton'
 import Box, { BoxProps } from '@mui/material/Box'
-import FormControl from '@mui/material/FormControl'
 import useMediaQuery from '@mui/material/useMediaQuery'
-import OutlinedInput from '@mui/material/OutlinedInput'
 import { styled, useTheme } from '@mui/material/styles'
 import InputAdornment from '@mui/material/InputAdornment'
 import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel'
+
+// ** Form / Validation
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import SharedTextField from 'src/@core/components/form-components/shared-inputs/SharedTextField'
 
 // ** Icon Imports
 import Icon from 'src/@core/components/icon'
@@ -26,13 +28,21 @@ import Icon from 'src/@core/components/icon'
 // ** Layout Import
 import BlankLayout from 'src/@core/layouts/BlankLayout'
 
-// ** Hooks
+// ** Hooks & Redux
 import { useSettings } from 'src/@core/hooks/useSettings'
+import { useAppDispatch, useAppSelector } from 'src/store/hooks'
+import { register as registerAction } from 'src/store/slices/authSlice'
+import { registerSchema, RegisterForm } from 'src/schemas/shared/authSchemas'
 
 // ** Demo Imports
 import FooterIllustrationsV2 from 'src/views/pages/auth/FooterIllustrationsV2'
 
-// ** Styled Components
+const LinkStyled = styled(Link)(({ theme }) => ({
+  fontSize: '0.875rem',
+  textDecoration: 'none',
+  color: theme.palette.primary.main
+}))
+
 const RegisterIllustration = styled('img')(({ theme }) => ({
   zIndex: 2,
   maxHeight: 600,
@@ -59,12 +69,6 @@ const RightWrapper = styled(Box)<BoxProps>(({ theme }) => ({
   }
 }))
 
-const LinkStyled = styled(Link)(({ theme }) => ({
-  fontSize: '0.875rem',
-  textDecoration: 'none',
-  color: theme.palette.primary.main
-}))
-
 const FormControlLabel = styled(MuiFormControlLabel)<FormControlLabelProps>(({ theme }) => ({
   marginTop: theme.spacing(1.5),
   marginBottom: theme.spacing(1.75),
@@ -77,6 +81,31 @@ const FormControlLabel = styled(MuiFormControlLabel)<FormControlLabelProps>(({ t
 const Register = () => {
   // ** States
   const [showPassword, setShowPassword] = useState<boolean>(false)
+
+  // ** Form (so SharedTextField can use Controller internally)
+  const { control, handleSubmit } = useForm<RegisterForm>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { username: '', email: '', password: '', agree: false }
+  })
+
+  // ** Redux / Router
+  const dispatch = useAppDispatch()
+  const router = useRouter()
+  const authLoading = useAppSelector(state => state.auth.loading)
+  const [serverError, setServerError] = useState<string | null>(null)
+
+  const onSubmit = async (data: RegisterForm) => {
+    setServerError(null)
+    try {
+      await dispatch(registerAction({ email: data.email, password: data.password, username: data.username })).unwrap()
+
+      // registration successful -> redirect to login
+      router.push('/login')
+    } catch (err: any) {
+      // show error returned from the thunk
+      setServerError(err?.message || (typeof err === 'string' ? err : JSON.stringify(err)))
+    }
+  }
 
   // ** Hooks
   const theme = useTheme()
@@ -155,44 +184,86 @@ const Register = () => {
               </Typography>
               <Typography sx={{ color: 'text.secondary' }}>Make your app management easy and fun!</Typography>
             </Box>
-            <form noValidate autoComplete='off' onSubmit={e => e.preventDefault()}>
-              <TextField autoFocus fullWidth sx={{ mb: 4 }} label='Username' placeholder='johndoe' />
-              <TextField fullWidth label='Email' sx={{ mb: 4 }} placeholder='user@email.com' />
-              <FormControl fullWidth>
-                <InputLabel htmlFor='auth-login-v2-password'>Password</InputLabel>
-                <OutlinedInput
-                  label='Password'
-                  id='auth-login-v2-password'
-                  type={showPassword ? 'text' : 'password'}
-                  endAdornment={
+            <form noValidate autoComplete='off' onSubmit={handleSubmit(onSubmit)}>
+              <SharedTextField
+                autoFocus
+                fullWidth
+                sx={{ mb: 0 }}
+                control={control}
+                name='username'
+                label='Username'
+                placeholder='johndoe'
+              />
+
+              <SharedTextField
+                fullWidth
+                sx={{ mb: 0 }}
+                control={control}
+                name='email'
+                label='Email'
+                placeholder='user@email.com'
+              />
+
+              <SharedTextField
+                control={control}
+                name='password'
+                label='Password'
+                required={true}
+                type={showPassword ? 'text' : 'password'}
+                fullWidth
+                sx={{ mb: 0 }}
+                InputProps={{
+                  endAdornment: (
                     <InputAdornment position='end'>
                       <IconButton
                         edge='end'
                         onMouseDown={e => e.preventDefault()}
                         onClick={() => setShowPassword(!showPassword)}
                       >
-                        <Icon icon={showPassword ? 'tabler:eye' : 'tabler:eye-off'} fontSize={20} />
+                        <Icon icon={showPassword ? 'tabler:eye' : 'tabler:eye-off'} fontSize={25} />
                       </IconButton>
                     </InputAdornment>
-                  }
-                />
-              </FormControl>
-
-              <FormControlLabel
-                control={<Checkbox />}
-                sx={{ mb: 4, mt: 1.5, '& .MuiFormControlLabel-label': { fontSize: '0.875rem' } }}
-                label={
-                  <>
-                    <Typography variant='body2' component='span'>
-                      I agree to{' '}
-                    </Typography>
-                    <LinkStyled href='/' onClick={e => e.preventDefault()}>
-                      privacy policy & terms
-                    </LinkStyled>
-                  </>
-                }
+                  )
+                }}
               />
-              <Button fullWidth size='large' type='submit' variant='contained' sx={{ mb: 4 }}>
+
+              <Controller
+                name='agree'
+                control={control}
+                defaultValue={false}
+                render={({ field, fieldState }) => (
+                  <>
+                    <FormControlLabel
+                      control={<Checkbox {...field} checked={Boolean(field.value)} />}
+                      sx={{ mb: 1, mt: 1.5, '& .MuiFormControlLabel-label': { fontSize: '0.875rem' } }}
+                      label={
+                        <>
+                          <Typography variant='body2' component='span'>
+                            I agree to{' '}
+                          </Typography>
+                          <LinkStyled href='/' onClick={e => e.preventDefault()}>
+                            {' '}
+                            {/* Tirar o proventDefault depois.. */}
+                            privacy policy & terms
+                          </LinkStyled>
+                        </>
+                      }
+                    />
+                    {fieldState.error && (
+                      <Typography variant='caption' color='error' sx={{ display: 'block', mb: 2 }}>
+                        {fieldState.error.message}
+                      </Typography>
+                    )}
+                  </>
+                )}
+              />
+              {serverError && (
+                <Typography variant='body2' color='error' sx={{ mb: 2 }}>
+                  {serverError}
+                </Typography>
+              )}
+
+              <Button fullWidth size='large' type='submit' variant='contained' sx={{ mb: 4 }} disabled={authLoading}>
                 Sign up
               </Button>
               <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>

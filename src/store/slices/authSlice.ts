@@ -1,5 +1,4 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
-import axios from 'axios'
 import authConfig from 'src/configs/auth'
 
 type User = {
@@ -36,7 +35,7 @@ const initialState: AuthState = persisted
 // Exemplo simples: ajuste a URL e resposta conforme sua API
 export const login = createAsyncThunk('auth/login', async (creds: Credentials, { rejectWithValue }) => {
   try {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(authConfig.loginEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(creds)
@@ -56,21 +55,30 @@ export const login = createAsyncThunk('auth/login', async (creds: Credentials, {
 
 export const register = createAsyncThunk(
   'auth/register',
-  async (payload: { email: string; password: string; username?: string }, thunkAPI) => {
+  async (payload: { email: string; password: string; username?: string }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(authConfig.registerEndpoint, payload)
-      const data = response.data
+      const res = await fetch(authConfig.registerEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
 
-      // The fake backend returns 200 even for validation errors (payload.error).
-      // Treat a response that contains an `error` key as a rejection so callers (pages) can handle/display it.
-      if (data && (data.error || data.errors)) {
-        return thunkAPI.rejectWithValue(data.error ?? data.errors)
+      if (!res.ok) {
+        const err = await res.text()
+
+        return rejectWithValue(err || 'Registration failed')
       }
 
-      // return whatever the endpoint returns (e.g. { accessToken })
+      const data = await res.json() // expecting { accessToken, userData }
+
+      // Treat backend validation errors as rejection
+      if (data && (data.error || data.errors)) {
+        return rejectWithValue(data.error ?? data.errors)
+      }
+
       return data
-    } catch (err: any) {
-      return thunkAPI.rejectWithValue(err.response?.data ?? { message: err.message })
+    } catch (e: any) {
+      return rejectWithValue(e.message || 'Network error')
     }
   }
 )
@@ -107,16 +115,31 @@ const authSlice = createSlice({
         state.error = null
       })
       .addCase(login.fulfilled, (state, action) => {
-        const { user, token } = action.payload
-        state.user = user
-        state.token = token
+        const { userData, accessToken } = action.payload
+        state.user = userData
+        state.token = accessToken
         state.isAuthenticated = true
         state.loading = false
         state.error = null
-        localStorage.setItem(
-          'auth',
-          JSON.stringify({ user, token, isAuthenticated: true, loading: false, error: null })
-        )
+
+        // Persist in both the legacy keys used by guards and in a single compact snapshot
+        if (typeof window !== 'undefined') {
+          // Keys used by AuthGuard/GuestGuard
+          if (accessToken) localStorage.setItem('accessToken', accessToken)
+          if (userData) localStorage.setItem('userData', JSON.stringify(userData))
+
+          // Project slice snapshot (optional)
+          localStorage.setItem(
+            'auth',
+            JSON.stringify({
+              user: userData,
+              token: accessToken,
+              isAuthenticated: true,
+              loading: false,
+              error: null
+            })
+          )
+        }
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false
@@ -124,25 +147,26 @@ const authSlice = createSlice({
       })
       .addCase(register.pending, state => {
         state.loading = true
+        state.error = null
       })
       .addCase(register.fulfilled, (state, action) => {
         state.loading = false
-
-        // If the backend returns an accessToken on registration, persist it in state so it can be used
-        // (the fake-db returns { accessToken } on success). We don't have user data here – the app
-        // can call the `me` endpoint after registration/login to fetch user info.
         const payload = action.payload as any
+
+        // If backend returned token + user, set them and persist
         if (payload?.accessToken) {
           state.token = payload.accessToken
+          state.user = payload.userData ?? state.user
+          state.isAuthenticated = true
+          state.error = null
 
-          // persist minimal auth info
           if (typeof window !== 'undefined') {
             localStorage.setItem(
               'auth',
               JSON.stringify({
                 user: state.user,
                 token: state.token,
-                isAuthenticated: false,
+                isAuthenticated: state.isAuthenticated,
                 loading: false,
                 error: null
               })
@@ -150,10 +174,9 @@ const authSlice = createSlice({
           }
         }
       })
-      .addCase(register.rejected, state => {
+      .addCase(register.rejected, (state, action) => {
         state.loading = false
-
-        // optionally store errors in state
+        state.error = (action.payload as any) || action.error.message || 'Registration failed'
       })
   }
 })
