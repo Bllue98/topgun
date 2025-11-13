@@ -3,22 +3,18 @@ import { useState, ReactNode, MouseEvent } from 'react'
 
 // ** Next Imports
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 
 // ** MUI Components
 import Alert from '@mui/material/Alert'
 import Button from '@mui/material/Button'
 import Divider from '@mui/material/Divider'
 import Checkbox from '@mui/material/Checkbox'
-import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
-import InputLabel from '@mui/material/InputLabel'
 import IconButton from '@mui/material/IconButton'
 import Box, { BoxProps } from '@mui/material/Box'
-import FormControl from '@mui/material/FormControl'
 import useMediaQuery from '@mui/material/useMediaQuery'
-import OutlinedInput from '@mui/material/OutlinedInput'
 import { styled, useTheme } from '@mui/material/styles'
-import FormHelperText from '@mui/material/FormHelperText'
 import InputAdornment from '@mui/material/InputAdornment'
 import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormControlLabel'
 
@@ -26,7 +22,7 @@ import MuiFormControlLabel, { FormControlLabelProps } from '@mui/material/FormCo
 import Icon from 'src/@core/components/icon'
 
 // ** Third Party Imports
-import { useForm, Controller } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, LoginForm } from 'src/schemas/shared/authSchemas'
 
@@ -44,6 +40,7 @@ import BlankLayout from 'src/@core/layouts/BlankLayout'
 
 // ** Demo Imports
 import FooterIllustrationsV2 from 'src/views/pages/auth/FooterIllustrationsV2'
+import SharedTextField from 'src/@core/components/form-components/shared-inputs/SharedTextField'
 
 // ** Styled Components
 const LoginIllustration = styled('img')(({ theme }) => ({
@@ -101,6 +98,7 @@ const LoginPage = () => {
   const { settings } = useSettings()
   const hidden = useMediaQuery(theme.breakpoints.down('md'))
   const authLoading = useAppSelector(state => state.auth.loading)
+  const router = useRouter()
 
   // ** Vars
   const { skin } = settings
@@ -116,13 +114,20 @@ const LoginPage = () => {
     resolver: zodResolver(loginSchema)
   })
 
-  const onSubmit = (data: LoginForm) => {
+  const onSubmit = async (data: LoginForm) => {
     const { email, password } = data
-    dispatch(login({ email, password, rememberMe }))
-    setError('email', {
-      type: 'manual',
-      message: 'Email or Password is invalid'
-    })
+    try {
+      await dispatch(login({ email, password })).unwrap()
+
+      // Redirect on success
+      const returnUrl = (router.query.returnUrl as string) || '/'
+      router.replace(returnUrl)
+    } catch (err: any) {
+      setError('email', {
+        type: 'manual',
+        message: typeof err === 'string' ? err : 'Email or Password is invalid'
+      })
+    }
   }
 
   const imageSource = skin === 'bordered' ? 'auth-v2-login-illustration-bordered' : 'auth-v2-login-illustration'
@@ -193,7 +198,7 @@ const LoginPage = () => {
                 Please sign-in to your account and start the adventure
               </Typography>
             </Box>
-            <Alert icon={false} sx={{ py: 3, mb: 6, ...bgColors.primaryLight, '& .MuiAlert-message': { p: 0 } }}>
+            <Alert icon={false} sx={{ py: 3, mb: 3, ...bgColors.primaryLight, '& .MuiAlert-message': { p: 0 } }}>
               <Typography variant='body2' sx={{ mb: 2, color: 'primary.main' }}>
                 Admin: <strong>admin@vuexy.com</strong> / Pass: <strong>admin</strong>
               </Typography>
@@ -202,62 +207,39 @@ const LoginPage = () => {
               </Typography>
             </Alert>
             <form noValidate autoComplete='off' onSubmit={handleSubmit(onSubmit)}>
-              <FormControl fullWidth sx={{ mb: 4 }}>
-                <Controller
-                  name='email'
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field: { value, onChange, onBlur } }) => (
-                    <TextField
-                      autoFocus
-                      label='Email'
-                      value={value}
-                      onBlur={onBlur}
-                      onChange={onChange}
-                      error={Boolean(errors.email)}
-                      placeholder='admin@vuexy.com'
-                    />
-                  )}
-                />
-                {errors.email && <FormHelperText sx={{ color: 'error.main' }}>{errors.email.message}</FormHelperText>}
-              </FormControl>
-              <FormControl fullWidth sx={{ mb: 1.5 }}>
-                <InputLabel htmlFor='auth-login-v2-password' error={Boolean(errors.password)}>
-                  Password
-                </InputLabel>
-                <Controller
-                  name='password'
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field: { value, onChange, onBlur } }) => (
-                    <OutlinedInput
-                      value={value}
-                      onBlur={onBlur}
-                      label='Password'
-                      onChange={onChange}
-                      id='auth-login-v2-password'
-                      error={Boolean(errors.password)}
-                      type={showPassword ? 'text' : 'password'}
-                      endAdornment={
-                        <InputAdornment position='end'>
-                          <IconButton
-                            edge='end'
-                            onMouseDown={e => e.preventDefault()}
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            <Icon icon={showPassword ? 'tabler:eye' : 'tabler:eye-off'} fontSize={20} />
-                          </IconButton>
-                        </InputAdornment>
-                      }
-                    />
-                  )}
-                />
-                {errors.password && (
-                  <FormHelperText sx={{ color: 'error.main' }} id=''>
-                    {errors.password.message}
-                  </FormHelperText>
-                )}
-              </FormControl>
+              <SharedTextField
+                fullWidth
+                sx={{ mb: 2.5 }}
+                autoFocus
+                control={control}
+                name='email'
+                label='Email'
+                error={Boolean(errors.email)}
+                placeholder='admin@vuexy.com'
+              />
+
+              <SharedTextField
+                control={control}
+                name='password'
+                label='Password'
+                required={true}
+                type={showPassword ? 'text' : 'password'}
+                fullWidth
+                sx={{ mb: 1.5 }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position='end'>
+                      <IconButton
+                        edge='end'
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        <Icon icon={showPassword ? 'tabler:eye' : 'tabler:eye-off'} fontSize={25} />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
               <Box
                 sx={{
                   mb: 1.75,
