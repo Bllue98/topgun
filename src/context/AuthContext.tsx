@@ -45,10 +45,12 @@ const AuthProvider = ({ children }: Props) => {
         await axios
           .get(authConfig.meEndpoint, {
             headers: {
-              Authorization: storedToken
+              Authorization: `Bearer ${storedToken}`
             }
           })
           .then(async response => {
+            // ensure axios sends Authorization on subsequent requests
+            axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`
             setLoading(false)
             setUser({ ...response.data.userData })
           })
@@ -71,13 +73,60 @@ const AuthProvider = ({ children }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Sync AuthContext with localStorage when route changes.
+  // This helps when another auth flow (e.g. Redux) writes tokens/user to localStorage
+  // so the AuthProvider picks it up without a full reload.
+  useEffect(() => {
+    if (!router.isReady) {
+      return
+    }
+
+    const token = window.localStorage.getItem(authConfig.storageTokenKeyName)
+    const storedUser = window.localStorage.getItem('userData')
+
+    if (storedUser && !user) {
+      try {
+        setUser(JSON.parse(storedUser))
+      } catch (e) {
+        setUser(null)
+      }
+      setLoading(false)
+
+      return
+    }
+
+    if (token && !user) {
+      setLoading(true)
+
+      // Always send Bearer prefix when calling protected endpoints
+      const bearer = token.startsWith('Bearer ') ? token : `Bearer ${token}`
+      axios.defaults.headers.common['Authorization'] = bearer
+      axios
+        .get(authConfig.meEndpoint, { headers: { Authorization: bearer } })
+        .then(response => {
+          setUser({ ...response.data.userData })
+          setLoading(false)
+        })
+        .catch(() => {
+          setUser(null)
+          setLoading(false)
+        })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.route])
+
   const handleLogin = (params: LoginParams, errorCallback?: ErrCallbackType) => {
     axios
       .post(authConfig.loginEndpoint, params)
       .then(async response => {
-        params.rememberMe
-          ? window.localStorage.setItem(authConfig.storageTokenKeyName, response.data.accessToken)
-          : null
+        if (params.rememberMe) {
+          window.localStorage.setItem(authConfig.storageTokenKeyName, response.data.accessToken)
+        }
+
+        // ensure axios default header is set for subsequent requests
+        if (response?.data?.accessToken) {
+          axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.accessToken}`
+        }
         const returnUrl = router.query.returnUrl
 
         setUser({ ...response.data.userData })

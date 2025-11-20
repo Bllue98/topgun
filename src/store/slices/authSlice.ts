@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import authConfig from 'src/configs/auth'
+import axios from 'axios'
 
 type User = {
   id: string
@@ -98,6 +99,12 @@ const authSlice = createSlice({
         'auth',
         JSON.stringify({ user: state.user, token: state.token, isAuthenticated: true, loading: false, error: null })
       )
+
+      // ensure axios includes Authorization for subsequent requests
+      if (state.token) {
+        const bearer = state.token.startsWith('Bearer ') ? state.token : `Bearer ${state.token}`
+        axios.defaults.headers.common['Authorization'] = bearer
+      }
     },
     logout(state) {
       state.user = null
@@ -127,6 +134,12 @@ const authSlice = createSlice({
           // Keys used by AuthGuard/GuestGuard
           if (accessToken) localStorage.setItem('accessToken', accessToken)
           if (userData) localStorage.setItem('userData', JSON.stringify(userData))
+
+          // ensure axios includes Authorization for subsequent requests
+          if (accessToken) {
+            const bearer = accessToken.startsWith('Bearer ') ? accessToken : `Bearer ${accessToken}`
+            axios.defaults.headers.common['Authorization'] = bearer
+          }
 
           // Project slice snapshot (optional)
           localStorage.setItem(

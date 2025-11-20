@@ -19,8 +19,12 @@ import type { EmotionCache } from '@emotion/cache'
 import { defaultACLObj } from 'src/configs/acl'
 import themeConfig from 'src/configs/themeConfig'
 
-// ** Fake-DB Import
-import 'src/@fake-db'
+// ** Fake-DB Import (controlled by env var `NEXT_PUBLIC_USE_MOCKS`)
+// To enable mocks set `NEXT_PUBLIC_USE_MOCKS=true` in your environment.
+if (process.env.NEXT_PUBLIC_USE_MOCKS === 'true') {
+  // eslint-disable-next-line global-require
+  require('src/@fake-db')
+}
 
 // ** Third Party Import
 import { Toaster } from 'react-hot-toast'
