@@ -1,5 +1,5 @@
 // src/components/RarityManager.tsx
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Button,
   Dialog,
@@ -13,12 +13,23 @@ import {
 } from '@mui/material'
 import { useForm, Controller } from 'react-hook-form'
 import SharedTextField from '../../../@core/components/form-components/shared-inputs/SharedTextField'
-
-interface Rarity {
-  name: string
-  color: string
-  weight: number
-}
+import { useAppDispatch, useAppSelector } from 'src/store/hooks'
+import {
+  selectRarities,
+  fetchRarities,
+  createRarity,
+  updateRarityRemote,
+  deleteRarityRemote,
+  reorderRarities,
+  resetToDefaults
+} from 'src/store/slices/raritiesSlice'
+import { Alert, CircularProgress, IconButton, Stack, Tooltip } from '@mui/material'
+import DeleteIcon from '@mui/icons-material/Delete'
+import EditIcon from '@mui/icons-material/Edit'
+import SaveIcon from '@mui/icons-material/Save'
+import CloseIcon from '@mui/icons-material/Close'
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 
 interface RarityFormValues {
   name: string
@@ -27,30 +38,84 @@ interface RarityFormValues {
 }
 
 const RarityManager: React.FC = () => {
-  const [rarities, setRarities] = useState<Rarity[]>([
-    { name: 'Common', color: '#888888', weight: 1 },
-    { name: 'Epic', color: '#ff0000', weight: 2 },
-    { name: 'Legendary', color: '#0000ff', weight: 3 }
-  ])
+  const rarities = useAppSelector(selectRarities)
+  const loading = useAppSelector(state => state.rarities.loading)
+  const error = useAppSelector(state => state.rarities.error)
+  const dispatch = useAppDispatch()
   const [open, setOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editColor, setEditColor] = useState('#000000')
+  const [editWeight, setEditWeight] = useState<number>(1)
 
   const { control, handleSubmit, reset } = useForm<RarityFormValues>({
     defaultValues: { name: '', color: '#000000', weight: 1 }
   })
 
-  const handleOpen = () => setOpen(true)
+  const handleOpen = () => {
+    setOpen(true)
+  }
   const handleClose = () => {
     setOpen(false)
     reset()
+    setEditingId(null)
   }
 
-  const addRarity = (data: RarityFormValues) => {
-    const trimmed = data.name.trim()
-    if (trimmed && !rarities.some(r => r.name === trimmed)) {
-      setRarities([...rarities, data].sort((a, b) => b.weight - a.weight))
-      reset()
+  // Fetch rarities when dialog opens if list empty
+  useEffect(() => {
+    if (open) {
+      dispatch(fetchRarities())
     }
+  }, [open, dispatch])
+
+  const addRarityHandler = (data: RarityFormValues) => {
+    const trimmed = data.name.trim()
+    if (!trimmed) return
+
+    // Use remote create thunk (tier is lower-case name)
+    dispatch(createRarity({ tier: trimmed.toLowerCase(), color: data.color, weight: Number(data.weight) }))
+    reset()
   }
+
+  const startEdit = (id: string) => {
+    const r = rarities.find(x => x.id === id)
+    if (!r) return
+    setEditingId(id)
+    setEditName(r.name)
+    setEditColor(r.color)
+    setEditWeight(r.weight)
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+  }
+
+  const saveEdit = () => {
+    if (!editingId) return
+    const trimmed = editName.trim()
+    if (!trimmed) return
+    dispatch(
+      updateRarityRemote({
+        id: editingId,
+        changes: { tier: trimmed.toLowerCase(), color: editColor, weight: editWeight }
+      })
+    )
+    setEditingId(null)
+  }
+
+  const remove = (id: string) => dispatch(deleteRarityRemote(id))
+
+  const moveUp = (index: number) => {
+    if (index <= 0) return
+    dispatch(reorderRarities({ fromIndex: index, toIndex: index - 1 }))
+  }
+  const moveDown = (index: number) => {
+    if (index >= rarities.length - 1) return
+    dispatch(reorderRarities({ fromIndex: index, toIndex: index + 1 }))
+  }
+
+  const refresh = () => dispatch(fetchRarities())
+  const resetDefaults = () => dispatch(resetToDefaults())
 
   return (
     <>
@@ -61,7 +126,21 @@ const RarityManager: React.FC = () => {
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth='sm'>
         <DialogTitle>Manage Rarities</DialogTitle>
         <DialogContent>
-          <form onSubmit={handleSubmit(addRarity)}>
+          <Stack direction='row' spacing={1} mb={2}>
+            <Button onClick={refresh} variant='outlined' disabled={loading}>Refresh</Button>
+            <Button onClick={resetDefaults} variant='outlined' disabled={loading}>Reset Defaults</Button>
+          </Stack>
+          {loading && (
+            <Box display='flex' justifyContent='center' my={2}>
+              <CircularProgress size={28} />
+            </Box>
+          )}
+          {error && (
+            <Alert severity='error' sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          <form onSubmit={handleSubmit(addRarityHandler)}>
             <SharedTextField control={control} name='name' label='New Rarity' required />
 
             <Controller
@@ -94,20 +173,102 @@ const RarityManager: React.FC = () => {
             <SharedTextField control={control} name='weight' label='Weight' type='number' required />
 
             <List>
-              {rarities.map((rarity, i) => (
-                <ListItem key={i}>
-                  <Box
-                    sx={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: rarity.color,
-                      borderRadius: '50%',
-                      mr: 2
-                    }}
-                  />
-                  <ListItemText primary={rarity.name} />
-                </ListItem>
-              ))}
+              {rarities.map((rarity, i) => {
+                const isEditing = editingId === rarity.id
+
+                return (
+                  <ListItem
+                    key={rarity.id}
+                    secondaryAction={
+                      <Stack direction='row' spacing={0.5}>
+                        {!isEditing && (
+                          <>
+                            <Tooltip title='Edit'>
+                              <IconButton size='small' onClick={() => startEdit(rarity.id)}>
+                                <EditIcon fontSize='small' />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title='Delete'>
+                              <IconButton size='small' color='error' onClick={() => remove(rarity.id)}>
+                                <DeleteIcon fontSize='small' />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title='Move Up'>
+                              <IconButton size='small' onClick={() => moveUp(i)} disabled={i === 0}>
+                                <ArrowUpwardIcon fontSize='small' />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title='Move Down'>
+                              <IconButton
+                                size='small'
+                                onClick={() => moveDown(i)}
+                                disabled={i === rarities.length - 1}
+                              >
+                                <ArrowDownwardIcon fontSize='small' />
+                              </IconButton>
+                            </Tooltip>
+                          </>
+                        )}
+                        {isEditing && (
+                          <>
+                            <Tooltip title='Save'>
+                              <IconButton size='small' color='primary' onClick={saveEdit}>
+                                <SaveIcon fontSize='small' />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title='Cancel'>
+                              <IconButton size='small' onClick={cancelEdit}>
+                                <CloseIcon fontSize='small' />
+                              </IconButton>
+                            </Tooltip>
+                          </>
+                        )}
+                      </Stack>
+                    }
+                  >
+                    <Box
+                      sx={{
+                        width: 20,
+                        height: 20,
+                        backgroundColor: isEditing ? editColor : rarity.color,
+                        borderRadius: '50%',
+                        mr: 2
+                      }}
+                    />
+                    {isEditing ? (
+                      <Stack direction='row' spacing={1} alignItems='center' flexGrow={1}>
+                        <SharedTextField
+                          control={control}
+                          name={`edit-name-${rarity.id}` as any}
+                          label='Name'
+                          value={editName}
+                          onChange={e => setEditName(e.target.value)}
+                        />
+                        <input
+                          type='color'
+                          value={editColor}
+                          onChange={e => setEditColor(e.target.value)}
+                          style={{ width: 32, height: 32, border: 'none', background: 'transparent', cursor: 'pointer' }}
+                        />
+                        <SharedTextField
+                          control={control}
+                          name={`edit-weight-${rarity.id}` as any}
+                          label='Weight'
+                          type='number'
+                          value={editWeight}
+                          onChange={e => setEditWeight(Number(e.target.value))}
+                          sx={{ width: 90 }}
+                        />
+                      </Stack>
+                    ) : (
+                      <ListItemText
+                        primary={`${rarity.name} (w=${rarity.weight})`}
+                        secondary={rarity.color}
+                      />
+                    )}
+                  </ListItem>
+                )
+              })}
             </List>
 
             <DialogActions>
