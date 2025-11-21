@@ -12,6 +12,8 @@ import {
   Box
 } from '@mui/material'
 import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import raritySchema, { RarityFormValues } from 'src/schemas/RaritySchema'
 import SharedTextField from '../../../@core/components/form-components/shared-inputs/SharedTextField'
 import { useAppDispatch, useAppSelector } from 'src/store/hooks'
 import {
@@ -31,12 +33,6 @@ import CloseIcon from '@mui/icons-material/Close'
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward'
 
-interface RarityFormValues {
-  name: string
-  color: string
-  weight: number
-}
-
 const RarityManager: React.FC = () => {
   const rarities = useAppSelector(selectRarities)
   const loading = useAppSelector(state => state.rarities.loading)
@@ -49,6 +45,7 @@ const RarityManager: React.FC = () => {
   const [editWeight, setEditWeight] = useState<number>(1)
 
   const { control, handleSubmit, reset } = useForm<RarityFormValues>({
+    resolver: zodResolver(raritySchema),
     defaultValues: { name: '', color: '#000000', weight: 1 }
   })
 
@@ -127,8 +124,12 @@ const RarityManager: React.FC = () => {
         <DialogTitle>Manage Rarities</DialogTitle>
         <DialogContent>
           <Stack direction='row' spacing={1} mb={2}>
-            <Button onClick={refresh} variant='outlined' disabled={loading}>Refresh</Button>
-            <Button onClick={resetDefaults} variant='outlined' disabled={loading}>Reset Defaults</Button>
+            <Button onClick={refresh} variant='outlined' disabled={loading}>
+              Refresh
+            </Button>
+            <Button onClick={resetDefaults} variant='outlined' disabled={loading}>
+              Reset Defaults
+            </Button>
           </Stack>
           {loading && (
             <Box display='flex' justifyContent='center' my={2}>
@@ -199,11 +200,7 @@ const RarityManager: React.FC = () => {
                               </IconButton>
                             </Tooltip>
                             <Tooltip title='Move Down'>
-                              <IconButton
-                                size='small'
-                                onClick={() => moveDown(i)}
-                                disabled={i === rarities.length - 1}
-                              >
+                              <IconButton size='small' onClick={() => moveDown(i)} disabled={i === rarities.length - 1}>
                                 <ArrowDownwardIcon fontSize='small' />
                               </IconButton>
                             </Tooltip>
@@ -248,7 +245,13 @@ const RarityManager: React.FC = () => {
                           type='color'
                           value={editColor}
                           onChange={e => setEditColor(e.target.value)}
-                          style={{ width: 32, height: 32, border: 'none', background: 'transparent', cursor: 'pointer' }}
+                          style={{
+                            width: 32,
+                            height: 32,
+                            border: 'none',
+                            background: 'transparent',
+                            cursor: 'pointer'
+                          }}
                         />
                         <SharedTextField
                           control={control}
@@ -261,10 +264,7 @@ const RarityManager: React.FC = () => {
                         />
                       </Stack>
                     ) : (
-                      <ListItemText
-                        primary={`${rarity.name} (w=${rarity.weight})`}
-                        secondary={rarity.color}
-                      />
+                      <ListItemText primary={`${rarity.name} (w=${rarity.weight})`} secondary={rarity.color} />
                     )}
                   </ListItem>
                 )

@@ -200,14 +200,17 @@ const raritiesSlice = createSlice({
     // FETCH
     builder
       .addCase(fetchRarities.pending, state => {
+        //Pending = carregando, elimina erro
         state.loading = true
         state.error = null
       })
       .addCase(fetchRarities.fulfilled, (state, action) => {
+        // Fulfilled = sucesso, define items
         state.loading = false
         state.items = action.payload
       })
       .addCase(fetchRarities.rejected, (state, action) => {
+        // Rejected = falha, define erro
         state.loading = false
         state.error = (action.payload as string) || action.error.message || 'Erro ao carregar raridades'
       })
@@ -215,9 +218,11 @@ const raritiesSlice = createSlice({
     // CREATE
     builder
       .addCase(createRarity.pending, state => {
+        //Pending = carregando, elimina erro
         state.error = null
       })
       .addCase(createRarity.fulfilled, (state, action) => {
+        // Fulfilled = sucesso, adiciona novo/organiza item
         const exists = state.items.find(r => r.id === action.payload.id)
         if (!exists) {
           state.items.push(action.payload)
@@ -225,12 +230,14 @@ const raritiesSlice = createSlice({
         }
       })
       .addCase(createRarity.rejected, (state, action) => {
+        // Rejected = falha, define erro
         state.error = (action.payload as string) || action.error.message || 'Erro ao criar raridade'
       })
 
     // UPDATE
     builder
       .addCase(updateRarityRemote.fulfilled, (state, action) => {
+        // Fulfilled = sucesso, atualiza item/organiza
         const idx = state.items.findIndex(r => r.id === action.payload.id)
         if (idx !== -1) {
           state.items[idx] = action.payload
@@ -238,15 +245,18 @@ const raritiesSlice = createSlice({
         }
       })
       .addCase(updateRarityRemote.rejected, (state, action) => {
+        // Rejected = falha, define erro
         state.error = (action.payload as string) || action.error.message || 'Erro ao atualizar raridade'
       })
 
     // DELETE
     builder
       .addCase(deleteRarityRemote.fulfilled, (state, action) => {
+        // Fulfilled = sucesso, remove item
         state.items = state.items.filter(r => r.id !== action.payload)
       })
       .addCase(deleteRarityRemote.rejected, (state, action) => {
+        // Rejected = falha, define erro
         state.error = (action.payload as string) || action.error.message || 'Erro ao remover raridade'
       })
   }
